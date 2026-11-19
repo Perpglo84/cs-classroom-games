@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Number Lab: How Computers Store Numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1a1e; --panel:#13262b; --panel2:#1a3238; --line:#2b4a52; --ink:#e9f2f0; --muted:#8fa6ab;
+    --bin:#2fc79a; --dec:#5fa4f0; --hex:#f4b13d; --warn:#ff6b78; --bulb:#ffd34d; --purple:#b98cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;touch-action:manipulation}
+  body{min-height:100vh;display:flex;flex-direction:column}
+  button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  header{display:flex;align-items:center;gap:16px;padding:14px 24px;flex-wrap:wrap}
+  h1{margin:0;font-size:clamp(22px,2.4vw,40px)}
+  h1 span{color:var(--bulb)}
+  #dots{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;background:var(--panel);padding:5px;border-radius:999px}
+  .dot{background:none;border:0;color:var(--muted);font-weight:700;font-size:clamp(12px,.95vw,16px);padding:7px 12px;border-radius:999px;white-space:nowrap}
+  .dot.done{color:var(--bin)}
+  .dot.done::before{content:"✓ "}
+  .dot[aria-current="true"]{background:var(--ink);color:var(--bg)}
+
+  main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,30%);gap:18px;padding:0 24px 18px}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border-radius:20px;padding:20px 24px}
+  #lesson{display:flex;flex-direction:column;gap:14px;min-width:0}
+  #tag{font-size:clamp(12px,1vw,16px);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--bulb)}
+  #title{margin:2px 0 0;font-size:clamp(24px,2.6vw,44px);line-height:1.1}
+  #picture{display:flex;gap:14px;align-items:center;background:var(--panel2);border-radius:16px;padding:12px 16px;font-size:clamp(16px,1.35vw,23px);line-height:1.35}
+  #picture .ico{font-size:clamp(28px,2.6vw,44px)}
+  #picture b{color:var(--bulb)}
+  #explain{font-size:clamp(15px,1.2vw,21px);line-height:1.45;color:#cfe0dd}
+  #explain b{color:var(--ink)}
+  #explain code,.facts code,.task code{font-family:"JetBrains Mono",monospace;background:#0c1a1e;padding:1px 6px;border-radius:6px;color:var(--bin)}
+
+  /* bit row */
+  #lab{display:flex;flex-direction:column;gap:14px}
+  .row{display:flex;justify-content:center;align-items:flex-end;gap:clamp(4px,.7vw,12px);flex-wrap:nowrap}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1 1 0;max-width:110px;min-width:0}
+  .lbl{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(12px,1.35vw,24px);color:var(--muted);white-space:nowrap}
+  .bitbtn{width:100%;aspect-ratio:4/5;border-radius:14px;border:3px solid var(--line);background:#0f2125;color:#4e676d;font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(22px,3vw,58px);transition:background .12s,color .12s,transform .08s}
+  .bitbtn:active{transform:scale(.95)}
+  .bitbtn.on{background:var(--bin);border-color:#8ff0cf;color:#062419}
+  .bitbtn:disabled{cursor:default}
+  .g-sign .lbl{color:var(--warn)} .g-sign .bitbtn.on{background:var(--warn);border-color:#ffb3ba;color:#3a0610}
+  .g-exp .lbl{color:var(--hex)}  .g-exp .bitbtn.on{background:var(--hex);border-color:#ffd994;color:#2a1a00}
+  .g-man .lbl{color:var(--dec)}  .g-man .bitbtn.on{background:var(--dec);border-color:#b5d4fa;color:#04182f}
+  .g-neg .lbl{color:var(--warn)}
+  .sep{flex:0 0 clamp(6px,1vw,18px)}
+  .point{flex:0 0 auto;font-size:clamp(30px,3.5vw,64px);font-weight:800;color:var(--bulb);align-self:flex-end;line-height:1;padding-bottom:.25em}
+  .more{flex:0 0 auto;align-self:center;color:var(--muted);font-size:clamp(12px,1vw,16px);max-width:90px;text-align:center}
+  .fieldnames{display:flex;justify-content:center;gap:10px;font-weight:700;font-size:clamp(12px,1vw,17px);flex-wrap:wrap}
+  .fieldnames span{padding:3px 10px;border-radius:999px;background:var(--panel2)}
+  .tools{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+  .tool{background:var(--panel2);border:2px solid var(--line);color:var(--ink);font-weight:700;font-size:clamp(14px,1.15vw,20px);padding:9px 16px;border-radius:12px}
+  .tool:active{transform:scale(.97)}
+  #readout{background:var(--panel2);border-radius:16px;padding:12px 18px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  #readout .rl{font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dec);font-size:clamp(12px,1vw,17px)}
+  #rmain{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(30px,3.6vw,64px);color:var(--dec);line-height:1}
+  #rwork{font-family:"JetBrains Mono",monospace;font-size:clamp(13px,1.15vw,20px);color:var(--muted);flex-basis:100%}
+  #readout.hide #rmain,#readout.hide #rwork{filter:blur(14px);opacity:.5}
+
+  /* tasks */
+  #side{display:flex;flex-direction:column;gap:14px}
+  #tasks h2{margin:0 0 10px;font-size:clamp(16px,1.3vw,22px);color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;font-size:clamp(15px,1.2vw,20px);line-height:1.35;color:var(--muted)}
+  .task .tick{flex:0 0 26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:15px;font-weight:800}
+  .task.now{background:var(--panel2);color:var(--ink)}
+  .task.now .tick{border-color:var(--bulb);color:var(--bulb)}
+  .task.done{color:#a9c4bf}
+  .task.done .tick{background:var(--bin);border-color:var(--bin);color:#062419}
+  #act{display:flex;flex-direction:column;gap:10px}
+  .opt{background:var(--panel2);border:2px solid var(--line);color:var(--ink);text-align:left;font-size:clamp(14px,1.15vw,19px);padding:11px 14px;border-radius:12px;line-height:1.3}
+  .opt.sel{border-color:var(--dec);background:#1d3a55}
+  .opt.right{border-color:var(--bin);background:#14453a}
+  .opt.wrong{border-color:var(--warn);animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .inrow{display:flex;gap:10px}
+  .inrow input{flex:1;min-width:0;background:#0c1a1e;border:2px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 14px;font-family:"JetBrains Mono",monospace;font-size:clamp(18px,1.5vw,26px)}
+  .btn{background:var(--panel2);border:2px solid var(--line);color:var(--ink);font-weight:700;font-size:clamp(14px,1.15vw,20px);padding:10px 16px;border-radius:12px;white-space:nowrap}
+  .btn.primary{background:var(--bulb);border-color:var(--bulb);color:#2a2100}
+  .btn.glow{animation:glow 1.2s infinite}
+  @keyframes glow{50%{box-shadow:0 0 0 6px rgba(255,211,77,.35)}}
+  .btn[hidden],.tool[hidden]{display:none}
+  #fb{font-size:clamp(15px,1.2vw,20px);line-height:1.4;min-height:1.4em}
+  #fb.good{color:var(--bin)} #fb.bad{color:var(--warn)} #fb.hint{color:var(--hex)}
+  .facts{background:#10302a;border:2px solid #1f5a4b;border-radius:16px;padding:14px 18px;font-size:clamp(14px,1.15vw,19px);line-height:1.45}
+  .facts h3{margin:0 0 6px;color:var(--bin);font-size:clamp(15px,1.2vw,20px);text-transform:uppercase;letter-spacing:1px}
+  .facts ul{margin:0;padding-left:20px}
+  .facts[hidden]{display:none}
+  nav{display:flex;gap:10px;justify-content:space-between}
+
+  /* adder */
+  .adder{display:grid;grid-template-columns:auto repeat(9,minmax(0,1fr));gap:clamp(3px,.5vw,8px);align-items:center;max-width:900px;margin:0 auto;width:100%}
+  .adder .rl{font-weight:700;color:var(--muted);font-size:clamp(12px,1vw,17px);padding-right:8px;white-space:nowrap}
+  .ab{font-family:"JetBrains Mono",monospace;font-weight:800;text-align:center;font-size:clamp(20px,2.4vw,44px);padding:4px 0;border-radius:10px}
+  .ab.c{font-size:clamp(14px,1.4vw,24px);color:var(--hex);min-height:1.4em}
+  .ab.a{background:#0f2125;color:var(--bin)} .ab.b{background:#0f2125;color:var(--warn)}
+  .ab.r{background:#0f2125;color:var(--dec);min-height:1.5em}
+  .ab.active{outline:3px solid var(--bulb)}
+  .ab.drop{color:var(--muted);text-decoration:line-through;animation:fall 1s forwards}
+  @keyframes fall{to{transform:translateY(16px) rotate(-12deg);opacity:.35}}
+  .rule{grid-column:2 / -1;height:3px;background:var(--muted);border-radius:2px}
+  .pairs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .pairs .tool.sel{border-color:var(--bulb);color:var(--bulb)}
+  #addmsg{text-align:center;font-size:clamp(15px,1.3vw,22px);min-height:1.4em;color:var(--bin)}
+
+  /* gray */
+  .gray{display:grid;grid-template-columns:minmax(160px,260px) 1fr;gap:20px;align-items:center}
+  @media (max-width:700px){.gray{grid-template-columns:1fr}}
+  .gray svg{width:100%;height:auto}
+  .sector{fill:#0f2125;stroke:var(--line);stroke-width:2}
+  .sector.cur{fill:var(--bulb)}
+  .stext{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:15px;fill:var(--muted);text-anchor:middle;dominant-baseline:middle}
+  .stext.cur{fill:#2a2100}
+  .grows{display:flex;flex-direction:column;gap:12px}
+  .grow{display:grid;grid-template-columns:130px repeat(3,minmax(0,80px)) auto;gap:8px;align-items:center}
+  .grow .rl{font-weight:700;font-size:clamp(13px,1.1vw,18px)}
+  .gb{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(24px,2.6vw,46px);text-align:center;background:#0f2125;border-radius:10px;padding:4px 0;border:3px solid transparent}
+  .gb.chg{border-color:var(--warn);color:var(--warn)}
+  .gcount{font-weight:700;font-size:clamp(13px,1.1vw,18px);color:var(--muted);padding-left:6px}
+  #glitch{font-size:clamp(14px,1.2vw,20px);color:var(--warn);min-height:2.8em;line-height:1.4}
+
+  /* summary */
+  table.sum{width:100%;border-collapse:collapse;font-size:clamp(13px,1.1vw,18px)}
+  table.sum th,table.sum td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.sum th{color:var(--muted);text-transform:uppercase;font-size:.85em;letter-spacing:1px}
+  table.sum td:first-child{font-weight:700;color:var(--bulb);white-space:nowrap}
+  table.sum code{font-family:"JetBrains Mono",monospace;color:var(--bin)}
+  .bridge{background:#2a2350;border:2px solid #4b3f8f;border-radius:16px;padding:14px 18px;font-size:clamp(15px,1.25vw,21px);line-height:1.45}
+  .bridge b{color:var(--purple)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Number <span>Lab</span></h1>
+  <nav id="dots" aria-label="Missions"></nav>
+</header>
+
+<main>
+  <section id="lesson" class="card">
+    <div>
+      <div id="tag"></div>
+      <h2 id="title"></h2>
+    </div>
+    <div id="picture"></div>
+    <div id="explain"></div>
+    <div id="lab"></div>
+  </section>
+
+  <aside id="side">
+    <section id="tasks" class="card" aria-live="polite">
+      <h2>Your missions</h2>
+      <div id="tlist"></div>
+      <div id="act"></div>
+      <div id="fb"></div>
+    </section>
+    <section class="facts" id="facts" hidden></section>
+    <nav>
+      <button class="btn" id="prev">◀ Back</button>
+      <button class="btn" id="hintBtn">💡 Hint</button>
+      <button class="btn primary" id="next">Next ▶</button>
+    </nav>
+  </aside>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const MINUS = "−";
+const fmt = n => (n < 0 ? MINUS + Math.abs(n) : String(n));
+const bstr = b => b.join("");
+const toBits = (n, w = 8) => (((n % 2 ** w) + 2 ** w) % 2 ** w).toString(2).padStart(w, "0").split("").map(Number);
+const uval = b => parseInt(bstr(b), 2);
+const inv = b => b.map(x => 1 - x);
+const norm = s => s.replace(/[−–—]/g, "-").replace(/\s+/g, "").toLowerCase();
+
+/* ---------- place-value helpers ---------- */
+const PV8 = [128, 64, 32, 16, 8, 4, 2, 1];
+const cells = (labs, cls) => labs.map((l, i) => ({ lab: String(l), cls: Array.isArray(cls) ? cls[i] : cls || "" }));
+function working(b, weights, labs) {
+  const parts = [];
+  b.forEach((x, i) => { if (x) parts.push(labs ? labs[i] : String(weights[i])); });
+  if (!parts.length) return "no bits on";
+  return parts.join(" + ").replace(/\+ −/g, MINUS + " ").replace(/^−/, MINUS);
+}
+function dec(n) { // tidy decimals
+  return fmt(+n.toFixed(6));
+}
+
+/* ---------- missions ---------- */
+const M = [
+{
+  short: "Unsigned",
+  tag: "Mission 1 · Warm-up",
+  title: "Unsigned binary",
+  ico: "💡",
+  picture: "Eight light switches. Each one is worth <b>double</b> the one to its right.",
+  explain: "Tap the bits to switch them on. Add up the column values of every bit that's on. <b>Unsigned</b> means there's no minus sign, so it can't store negative numbers.",
+  cells: cells(PV8),
+  start: "00000000",
+  decode: b => ({ main: String(uval(b)), work: working(b, PV8) }),
+  tasks: [
+    { type: "make", text: "Make the <b>biggest</b> number you can.", target: "11111111", hint: "Switch every bit on.", done: "255 is the biggest 8-bit unsigned number." },
+    { type: "make", text: "Now make the <b>smallest</b>.", target: "00000000", hint: "Switch them all off.", done: "0. So unsigned 8-bit goes from 0 to 255." },
+    { type: "mc", text: "How could we store <b>−5</b>?", options: ["We can't. Unsigned has no way to show a minus sign", "Use 11111111", "Use 00000101"], correct: 0, done: "Right! To store negatives, we need a <b>signed</b> method. There are three. Let's try them." }
+  ],
+  facts: ["Unsigned 8-bit range: <b>0 to 255</b> (256 values).", "Every bit is a positive place value."]
+},
+{
+  short: "Sign-magnitude",
+  tag: "Mission 2 · Signed method 1",
+  title: "Sign-magnitude",
+  ico: "➖",
+  picture: "A <b>minus sign</b> stuck on the front. The first bit is the sign. The other 7 bits are the normal number.",
+  explain: "The leftmost bit is the <b>MSB</b> (most significant bit). In every signed method: MSB <code>0</code> = positive, MSB <code>1</code> = negative.",
+  cells: [{ lab: "±", cls: "g-sign" }, ...cells([64, 32, 16, 8, 4, 2, 1])],
+  start: "00000000",
+  decode: b => {
+    const mag = uval(b.slice(1));
+    return { main: (b[0] ? MINUS : "+") + mag, work: `sign ${b[0]} → ${b[0] ? "negative" : "positive"}, then ${bstr(b.slice(1))} = ${mag}` };
+  },
+  tasks: [
+    { type: "make", text: "Make <b>+5</b>.", target: "00000101", hint: "Sign bit off, then 4 + 1.", done: "+5 = 00000101" },
+    { type: "make", text: "Now make <b>−5</b>. Change just one bit!", target: "10000101", hint: "Switch on the sign bit.", done: "−5 = 10000101. Easy for humans to read." },
+    { type: "make", text: "Make <b>zero</b>, but NOT with 00000000.", target: "10000000", hint: "Turn on the sign bit and nothing else.", done: "That's <b>−0</b>! Sign-magnitude has two zeros, which wastes a pattern and confuses the circuits." }
+  ],
+  facts: ["−5 = <code>10000101</code>", "Range: <b>−127 to +127</b>", "Problem: <b>two zeros</b> (+0 and −0)."]
+},
+{
+  short: "One's complement",
+  tag: "Mission 3 · Signed method 2",
+  title: "One's complement",
+  ico: "🎞️",
+  picture: "A <b>photo negative</b>. To make a number negative, flip <b>every</b> bit.",
+  explain: "Start from the positive number and flip all the bits: every 0 becomes 1 and every 1 becomes 0. To read a negative, flip it back.",
+  cells: [{ lab: "±", cls: "g-sign" }, ...cells([64, 32, 16, 8, 4, 2, 1])],
+  start: "00000101",
+  tools: ["flip"],
+  decode: b => {
+    if (!b[0]) return { main: "+" + uval(b), work: `MSB 0 → positive: ${uval(b)}` };
+    const m = uval(inv(b));
+    return { main: MINUS + m, work: `MSB 1 → negative. Flip back: ${bstr(inv(b))} = ${m}, so ${MINUS}${m}` };
+  },
+  tasks: [
+    { type: "make", preset: "00000101", text: "This is +5. Press <b>Flip every bit</b> to make −5.", target: "11111010", hint: "Use the Flip every bit button.", done: "−5 = 11111010" },
+    { type: "make", text: "Find the <b>second zero</b>. Flip 00000000 and see what you get.", target: "11111111", hint: "Switch every bit on (that's 00000000 flipped).", done: "11111111 = <b>−0</b>. Two zeros again!" }
+  ],
+  facts: ["−5 = <code>11111010</code> (flip every bit of +5)", "Range: <b>−127 to +127</b>", "Problem: still <b>two zeros</b>."]
+},
+{
+  short: "Two's complement",
+  tag: "Mission 4 · Signed method 3 (the one computers use)",
+  title: "Two's complement",
+  ico: "🚗",
+  picture: "A car's <b>milometer</b> rolling backwards: one below 00000000 is 11111111, which is −1.",
+  explain: "The secret: the MSB is worth <b>−128</b> instead of +128. Read it exactly like normal binary, just with one negative column. Nothing to flip!",
+  cells: [{ lab: "−128", cls: "g-neg" }, ...cells([64, 32, 16, 8, 4, 2, 1])],
+  start: "00000000",
+  tools: ["flip", "plus1"],
+  decode: b => {
+    const v = uval(b) - (b[0] ? 256 : 0);
+    return { main: fmt(v), work: working(b, null, ["−128", "64", "32", "16", "8", "4", "2", "1"]) + (b.includes(1) ? " = " + fmt(v) : "") };
+  },
+  tasks: [
+    { type: "make", text: "Switch on <b>only</b> the −128 bit.", target: "10000000", hint: "Just the leftmost bit.", done: "−128 is the smallest two's complement number." },
+    { type: "make", text: "Now switch on <b>all 8</b> bits. What do you get?", target: "11111111", hint: "All of them on.", done: "−128 + 127 = <b>−1</b>. The milometer rolled back one!" },
+    { type: "enter", preset: "11110110", text: "Without the readout, what is <code>11110110</code> in denary?", answer: ["-10"], hint: "−128 + 64 + 32 + 16 + 4 + 2 = ?", done: "−128 + 64 + 32 + 16 + 4 + 2 = <b>−10</b>" },
+    { type: "make", preset: "00001100", text: "This is +12. Make <b>−12</b>: press Flip every bit, then +1.", target: "11110100", hint: "Flip every bit gives 11110011. Then +1 gives 11110100.", done: "−12 = 11110100. Check: −128 + 64 + 32 + 16 + 4 = −12 ✓" }
+  ],
+  facts: ["<b>Encode:</b> flip every bit, then add 1. −5 = <code>11111011</code>", "<b>Decode:</b> treat the MSB as −128 and add up.", "Range: <b>−128 to +127</b>, with only <b>one zero</b>."]
+},
+{
+  short: "Why two's?",
+  tag: "Mission 5 · Why computers chose two's complement",
+  title: "Add a negative = subtract",
+  ico: "➕",
+  picture: "The computer subtracts by <b>adding a negative</b>. It needs only one adding circuit.",
+  explain: "Pick a sum and press <b>Add</b>. Watch the computer add column by column, right to left, carrying 1s just like column addition. Any carry past the 8th bit simply <b>falls off</b>.",
+  custom: adderMission,
+  tasks: [
+    { type: "event", ev: "added", text: "Press <b>Add</b> and watch 5 + (−5).", hint: "Press the yellow Add button.", done: "The answer comes out as 00000000 = 0 using ordinary addition." },
+    { type: "mc", multi: 2, text: "Choose the <b>two</b> reasons two's complement is preferred:", options: ["There is only one zero", "Normal binary addition works for negative numbers too", "It uses fewer bits", "It's easier for humans to read"], correct: [0, 1], done: "Yes: <b>one zero</b>, and <b>the same adder circuit</b> handles negatives, so subtraction needs no extra hardware." }
+  ],
+  facts: ["Only one zero, so no wasted pattern.", "Addition and subtraction use the same circuit.", "<b>Next:</b> you'll build that adding circuit out of logic gates!"]
+},
+{
+  short: "BCD",
+  tag: "Mission 6 · Binary-coded decimal",
+  title: "BCD",
+  ico: "⏰",
+  picture: "A <b>digital clock</b>: every digit has its own little display.",
+  explain: "Each <b>denary digit</b> gets its own 4 bits (8 4 2 1). A group above 9 (1010–1111) isn't allowed.",
+  cells: [...cells([8, 4, 2, 1]), { sep: "gap" }, ...cells([8, 4, 2, 1])],
+  start: "00000000",
+  decode: b => {
+    const d1 = uval(b.slice(0, 4)), d2 = uval(b.slice(4));
+    const s = x => (x > 9 ? "✗" : String(x));
+    const bad = d1 > 9 || d2 > 9;
+    return { main: s(d1) + s(d2), work: `${bstr(b.slice(0, 4))} → ${d1 > 9 ? d1 + " ✗ not a digit" : d1}   |   ${bstr(b.slice(4))} → ${d2 > 9 ? d2 + " ✗ not a digit" : d2}` + (bad ? "" : "") };
+  },
+  tasks: [
+    { type: "make", text: "Write <b>93</b> in BCD.", target: "10010011", hint: "9 = 8 + 1 in the left group. 3 = 2 + 1 in the right group.", done: "93 = 1001 0011 (normal binary would be 01011101)." },
+    { type: "mc", text: "Why do clocks and money use BCD?", options: ["Each digit stays exact and is easy to show on a display", "It uses fewer bits than binary", "It can store negative numbers"], correct: 0, done: "Right. BCD actually wastes some bits, but each digit maps straight onto a display and stays exact." }
+  ],
+  facts: ["Each denary digit uses its own <b>4 bits</b>.", "45 = <code>0100 0101</code>, 93 = <code>1001 0011</code>", "Used in <b>clocks, calculators and money</b>."]
+},
+{
+  short: "Gray code",
+  tag: "Mission 7 · Gray code",
+  title: "Gray code",
+  ico: "🔐",
+  picture: "A <b>combination lock dial</b>: you only ever move one click at a time.",
+  explain: "This dial is a <b>rotary encoder</b>, like a sensor in a robot arm. Turn it one step at a time. The bits that change are outlined in red. In Gray code, neighbouring numbers differ by <b>only one bit</b>.",
+  custom: grayMission,
+  tasks: [
+    { type: "event", ev: "3to4", text: "Turn the dial from <b>3</b> to <b>4</b> and watch both rows.", hint: "Press Turn ▶ until you go from 3 to 4.", done: "Look at the red outlines!" },
+    { type: "mc", text: "From 3 to 4, how many bits change in <b>Gray code</b>?", options: ["1", "2", "3"], correct: 0, done: "1 bit (010 → 110)." },
+    { type: "mc", text: "And in <b>normal binary</b>?", options: ["1", "2", "3"], correct: 2, done: "All 3 bits (011 → 100)." },
+    { type: "mc", text: "Why does this matter for a sensor?", options: ["Bits never flip at exactly the same instant, so binary can briefly misread (e.g. 7). With Gray code only one bit changes, so it can't misread.", "Gray code is faster to add", "Gray code uses fewer bits"], correct: 0, done: "Exactly. Gray code stops misreadings in sensors." }
+  ],
+  facts: ["Neighbouring numbers differ by <b>one bit</b>.", "0–7: 000, 001, 011, 010, 110, 111, 101, 100", "Used in <b>rotary encoders</b> to stop misreadings."]
+},
+{
+  short: "Excess-127",
+  tag: "Mission 8 · Excess-N",
+  title: "Excess-127",
+  ico: "🅿️",
+  picture: "A <b>car park</b> where the lowest basement is labelled \"Level 0\", so no level number is ever negative.",
+  explain: "Add <b>127</b> before storing, then subtract 127 when reading. The bits are read as normal unsigned binary.",
+  cells: cells(PV8),
+  start: "00000000",
+  decode: b => {
+    const s = uval(b);
+    return { main: fmt(s - 127), work: `stored ${s}  →  ${s} − 127 = ${fmt(s - 127)}` };
+  },
+  tasks: [
+    { type: "make", text: "Store the value <b>0</b>.", target: "01111111", hint: "0 + 127 = 127 = 01111111", done: "0 is stored as 127 = 01111111." },
+    { type: "make", text: "Encode <b>10</b> in Excess-127.", target: "10001001", hint: "10 + 127 = 137 = 128 + 8 + 1", done: "10 + 127 = 137 = 10001001" }
+  ],
+  facts: ["<b>Encode:</b> value + N. <b>Decode:</b> stored − N.", "10 in Excess-127 = <code>10001001</code>", "Used for the <b>exponent</b> in floating point (coming up!)."]
+},
+{
+  short: "Fixed point",
+  tag: "Mission 9 · Real numbers 1",
+  title: "Fixed point",
+  ico: "💷",
+  picture: "Like <b>money</b>: the point never moves. Pounds on the left, pence on the right.",
+  explain: "After the binary point, each column is <b>half</b> the one before: ½, ¼, ⅛, 1/16.",
+  cells: [...cells([8, 4, 2, 1]), { sep: "point" }, ...cells(["½", "¼", "⅛", "1/16"], "g-man")],
+  start: "00000000",
+  decode: b => {
+    const v = uval(b) / 16;
+    return { main: dec(v), work: working(b, null, ["8", "4", "2", "1", "0.5", "0.25", "0.125", "0.0625"]) + (b.includes(1) ? " = " + dec(v) : "") };
+  },
+  tasks: [
+    { type: "make", text: "Make <b>6.75</b>.", target: "01101100", hint: "6 = 4 + 2. 0.75 = ½ + ¼.", done: "6.75 = 0110.1100" },
+    { type: "mc", text: "Try to make exactly <b>0.1</b>. What happens?", options: ["You can't. The closest is 0.0625 or 0.125, so there's a rounding error", "It's 0000.0001", "It's 0001.0000"], correct: 0, done: "Right. Some numbers can't be stored exactly in binary, which causes <b>rounding errors</b>." }
+  ],
+  facts: ["The binary point <b>stays put</b>.", "6.75 = <code>0110.1100</code>", "Simple and fast, but a <b>small range</b>."]
+},
+{
+  short: "Floating point",
+  tag: "Mission 10 · Real numbers 2",
+  title: "Floating point (IEEE 754)",
+  ico: "🔬",
+  picture: "<b>Scientific notation</b> in binary: 6.02 × 10²³ becomes 1.something × 2<sup>power</sup>.",
+  explain: "32 bits in three parts: <b style='color:var(--warn)'>sign</b> (1 bit), <b style='color:var(--hex)'>exponent</b> (8 bits, stored in <b>Excess-127</b>!) and <b style='color:var(--dec)'>mantissa</b> (23 bits). The mantissa holds the bits after \"1.\". Only the first 4 mantissa bits are shown here.",
+  cells: [{ lab: "±", cls: "g-sign" }, { sep: "gap" }, ...cells([128, 64, 32, 16, 8, 4, 2, 1], "g-exp"), { sep: "gap" }, ...cells(["½", "¼", "⅛", "1/16"], "g-man"), { sep: "more" }],
+  fieldnames: true,
+  start: "0011111110000",
+  decode: b => {
+    const s = b[0], e = uval(b.slice(1, 9)), mb = b.slice(9, 13), frac = uval(mb) / 16;
+    if (e === 0 && frac === 0) return { main: "0", work: "exponent all 0s and mantissa all 0s is the special code for zero" };
+    if (e === 255) return { main: "∞ / NaN", work: "exponent all 1s is a special code (infinity or 'not a number')" };
+    if (e === 0) return { main: "tiny", work: "exponent all 0s is a special code for very tiny numbers" };
+    const v = (s ? -1 : 1) * (1 + frac) * 2 ** (e - 127);
+    const shown = Math.abs(v) >= 1e-4 && Math.abs(v) < 1e7 ? dec(v) : v.toExponential(3).replace("-", MINUS);
+    return { main: shown, work: `${s ? MINUS : "+"} 1.${bstr(mb)}₂ × 2<sup>${e} − 127</sup> = ${s ? MINUS : "+"} 1.${bstr(mb)}₂ × 2<sup>${fmt(e - 127)}</sup>` };
+  },
+  tasks: [
+    { type: "make", preset: "0011111110000", text: "This is 1 (1.0 × 2⁰, exponent 0 + 127 = 127). Make <b>2</b>.", target: "0100000000000", hint: "2 = 1.0 × 2¹. Exponent = 1 + 127 = 128 = 10000000.", done: "2 = 1.0 × 2¹, exponent 128 = 10000000" },
+    { type: "make", text: "Make <b>6.75</b>. (6.75 = 110.11₂ = 1.1011₂ × 2²)", target: "0100000011011", hint: "Exponent = 2 + 127 = 129 = 10000001. Mantissa = the bits after the point: 1011.", done: "6.75: sign 0, exponent 10000001, mantissa 1011…" },
+    { type: "make", text: "Now make <b>−6.75</b>.", target: "1100000011011", hint: "Change only the sign bit.", done: "Just flip the sign bit. Floating point uses sign-magnitude for the sign!" }
+  ],
+  facts: ["<b>Sign</b> 1 bit, <b>exponent</b> 8 bits (Excess-127), <b>mantissa</b> 23 bits.", "Huge range, but can still have <b>rounding errors</b> (0.1 isn't exact).", "Fixed point: fast, small range. Floating point: huge range."]
+},
+{
+  short: "Summary",
+  tag: "Mission complete",
+  title: "Your cheat sheet",
+  ico: "🏆",
+  picture: "You've used every way of storing numbers in the IB syllabus. Screenshot this!",
+  explain: "",
+  custom: summaryMission,
+  tasks: [],
+  facts: []
+}
+];
+
+/* ---------- state ---------- */
+let mi = 0, ti = 0, bits = [], locked = false, taskDone = false, hintShown = false, sel = [];
+const done = new Set();
+let customApi = null;
+
+function buildDots() {
+  $("dots").innerHTML = "";
+  M.forEach((m, i) => {
+    const d = document.createElement("button");
+    d.className = "dot" + (done.has(i) ? " done" : "");
+    d.textContent = m.short;
+    d.setAttribute("aria-current", i === mi ? "true" : "false");
+    d.onclick = () => load(i);
+    $("dots").appendChild(d);
+  });
+}
+
+function load(i) {
+  mi = i; ti = 0; customApi = null;
+  const m = M[i];
+  $("tag").textContent = m.tag;
+  $("title").textContent = m.title;
+  $("picture").innerHTML = `<span class="ico" aria-hidden="true">${m.ico}</span><span>${m.picture}</span>`;
+  $("explain").innerHTML = m.explain;
+  $("explain").hidden = !m.explain;
+  $("facts").hidden = true;
+  const lab = $("lab"); lab.innerHTML = "";
+  if (m.custom) { customApi = m.custom(lab); }
+  else { buildBits(m, lab); bits = m.start.split("").map(Number); }
+  $("prev").disabled = i === 0;
+  $("next").textContent = i === M.length - 1 ? "↺ Start again" : "Next ▶";
+  $("next").classList.remove("glow");
+  buildDots();
+  startTask();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function buildBits(m, lab) {
+  if (m.fieldnames) {
+    lab.insertAdjacentHTML("beforeend", `<div class="fieldnames"><span style="color:var(--warn)">Sign</span><span style="color:var(--hex)">Exponent (Excess-127)</span><span style="color:var(--dec)">Mantissa (first 4 of 23 bits)</span></div>`);
+  }
+  const row = document.createElement("div"); row.className = "row";
+  let k = 0;
+  m.cells.forEach(c => {
+    if (c.sep === "gap") { row.insertAdjacentHTML("beforeend", `<div class="sep"></div>`); return; }
+    if (c.sep === "point") { row.insertAdjacentHTML("beforeend", `<div class="point">.</div>`); return; }
+    if (c.sep === "more") { row.insertAdjacentHTML("beforeend", `<div class="more">+19 more mantissa bits</div>`); return; }
+    const idx = k++;
+    const cell = document.createElement("div"); cell.className = "cell " + c.cls;
+    cell.innerHTML = `<div class="lbl">${c.lab}</div>`;
+    const btn = document.createElement("button"); btn.className = "bitbtn"; btn.dataset.i = idx;
+    btn.setAttribute("aria-label", `Bit worth ${c.lab}`);
+    btn.onclick = () => { if (locked) return; bits[idx] = 1 - bits[idx]; update(); };
+    cell.appendChild(btn); row.appendChild(cell);
+  });
+  lab.appendChild(row);
+  if (m.tools) {
+    const t = document.createElement("div"); t.className = "tools";
+    if (m.tools.includes("flip")) t.insertAdjacentHTML("beforeend", `<button class="tool" id="tFlip">⇄ Flip every bit</button>`);
+    if (m.tools.includes("plus1")) t.insertAdjacentHTML("beforeend", `<button class="tool" id="tPlus">+1</button>`);
+    t.insertAdjacentHTML("beforeend", `<button class="tool" id="tClear">↺ All off</button>`);
+    lab.appendChild(t);
+  } else {
+    lab.insertAdjacentHTML("beforeend", `<div class="tools"><button class="tool" id="tClear">↺ All off</button></div>`);
+  }
+  lab.insertAdjacentHTML("beforeend", `<div id="readout"><span class="rl">Value</span><span id="rmain"></span><span id="rwork"></span></div>`);
+  const f = $("tFlip"), p = $("tPlus");
+  if (f) f.onclick = () => { if (locked) return; bits = inv(bits); update(); };
+  if (p) p.onclick = () => { if (locked) return; bits = toBits(uval(bits) + 1, bits.length); update(); };
+  $("tClear").onclick = () => { if (locked) return; bits = bits.map(() => 0); update(); };
+}
+
+function update() {
+  const m = M[mi];
+  if (m.custom) return;
+  document.querySelectorAll(".bitbtn").forEach(btn => {
+    const on = bits[+btn.dataset.i] === 1;
+    btn.classList.toggle("on", on); btn.textContent = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on); btn.disabled = locked;
+  });
+  const r = m.decode(bits);
+  $("rmain").textContent = r.main;
+  $("rwork").innerHTML = r.work;
+  const t = m.tasks[ti];
+  $("readout").classList.toggle("hide", !!(t && t.type === "enter" && !taskDone));
+  if (t && t.type === "make" && !taskDone && bstr(bits) === t.target) complete();
+}
+
+/* ---------- tasks ---------- */
+function renderList() {
+  const m = M[mi];
+  $("tasks").hidden = !m.tasks.length;
+  $("tlist").innerHTML = m.tasks.map((t, i) => {
+    const st = i < ti || (i === ti && taskDone) ? "done" : i === ti ? "now" : "";
+    return `<div class="task ${st}"><span class="tick">${st === "done" ? "✓" : i + 1}</span><span>${t.text}</span></div>`;
+  }).join("");
+}
+
+function startTask() {
+  const m = M[mi], t = m.tasks[ti];
+  taskDone = false; hintShown = false; sel = [];
+  $("fb").className = ""; $("fb").innerHTML = "";
+  $("act").innerHTML = "";
+  $("hintBtn").hidden = !(t && t.hint);
+  if (!t) { finish(); return; }
+  if (t.preset && !m.custom) bits = t.preset.split("").map(Number);
+  locked = t.type === "enter";
+  renderList();
+  if (t.type === "mc") {
+    t.options.forEach((o, i) => {
+      const b = document.createElement("button"); b.className = "opt"; b.innerHTML = o;
+      b.onclick = () => choose(i, b);
+      $("act").appendChild(b);
+    });
+    if (t.multi) $("act").insertAdjacentHTML("beforeend", `<button class="btn primary" id="mcCheck">Check</button>`), ($("mcCheck").onclick = checkMulti);
+  }
+  if (t.type === "enter") {
+    $("act").innerHTML = `<div class="inrow"><input id="ans" inputmode="text" autocomplete="off" placeholder="e.g. −50" aria-label="Your answer"><button class="btn primary" id="ansBtn">Check</button></div>`;
+    $("ansBtn").onclick = checkEnter;
+    $("ans").onkeydown = e => { if (e.key === "Enter") checkEnter(); };
+    $("act").insertAdjacentHTML("beforeend", `<div style="color:var(--muted);font-size:.9em">Tip: use a minus sign, e.g. −50 or -50</div>`);
+  }
+  update();
+}
+
+function choose(i, b) {
+  const t = M[mi].tasks[ti];
+  if (taskDone) return;
+  if (t.multi) {
+    const k = sel.indexOf(i);
+    if (k >= 0) sel.splice(k, 1); else sel.push(i);
+    b.classList.toggle("sel");
+    return;
+  }
+  if (i === t.correct) { b.classList.add("right"); complete(); }
+  else { b.classList.remove("wrong"); void b.offsetWidth; b.classList.add("wrong"); say("bad", "Not quite. Have another go."); }
+}
+function checkMulti() {
+  const t = M[mi].tasks[ti];
+  if (sel.length !== t.multi) { say("hint", `Pick exactly ${t.multi}.`); return; }
+  const ok = sel.every(i => t.correct.includes(i));
+  document.querySelectorAll(".opt").forEach((o, i) => { if (sel.includes(i)) o.classList.add(t.correct.includes(i) ? "right" : "wrong"); });
+  if (ok) complete(); else say("bad", "One of those isn't right. Click to deselect it and try again.");
+  if (!ok) setTimeout(() => document.querySelectorAll(".opt").forEach(o => o.classList.remove("wrong")), 600);
+}
+function checkEnter() {
+  const t = M[mi].tasks[ti];
+  const v = norm($("ans").value);
+  if (t.answer.map(norm).includes(v)) complete();
+  else say("bad", v ? "Not quite. Remember the MSB is worth −128." : "Type your answer first.");
+}
+
+function say(cls, html) { $("fb").className = cls; $("fb").innerHTML = html; }
+
+function complete() {
+  const t = M[mi].tasks[ti];
+  taskDone = true; locked = true;
+  say("good", "✓ " + t.done);
+  renderList();
+  update();
+  $("hintBtn").hidden = true;
+  const last = ti === M[mi].tasks.length - 1;
+  $("act").insertAdjacentHTML("beforeend", `<button class="btn primary" id="goOn">${last ? "Finish mission ✓" : "Next step ▶"}</button>`);
+  $("goOn").onclick = () => { ti++; startTask(); };
+  if (customApi && customApi.onComplete) customApi.onComplete(t);
+}
+
+function finish() {
+  const m = M[mi];
+  locked = false;
+  done.add(mi); buildDots();
+  renderList();
+  $("hintBtn").hidden = true;
+  $("act").innerHTML = "";
+  if (m.facts.length) {
+    $("facts").innerHTML = `<h3>Key facts</h3><ul>${m.facts.map(f => `<li>${f}</li>`).join("")}</ul>`;
+    $("facts").hidden = false;
+    say("good", "Mission complete! Read the key facts, then press Next.");
+  }
+  $("next").classList.add("glow");
+  update();
+}
+
+$("hintBtn").onclick = () => { const t = M[mi].tasks[ti]; if (t && t.hint) say("hint", "💡 " + t.hint); };
+$("prev").onclick = () => { if (mi > 0) load(mi - 1); };
+$("next").onclick = () => load(mi === M.length - 1 ? 0 : mi + 1);
+function fire(ev) { const t = M[mi].tasks[ti]; if (t && t.type === "event" && t.ev === ev && !taskDone) complete(); }
+
+/* ---------- Mission 5: adder ---------- */
+function adderMission(lab) {
+  const pairs = [[5, -5], [7, -3], [-2, -3], [20, -8]];
+  let pi = 0, running = false;
+  lab.innerHTML = `
+    <div class="pairs" id="pairs"></div>
+    <div class="adder" id="adder"></div>
+    <div class="tools"><button class="tool" id="addBtn" style="background:var(--bulb);color:#2a2100;border-color:var(--bulb)">➕ Add</button></div>
+    <div id="addmsg" aria-live="polite"></div>`;
+  const pb = $("pairs");
+  pairs.forEach((p, i) => {
+    const b = document.createElement("button"); b.className = "tool" + (i === 0 ? " sel" : "");
+    b.textContent = `${fmt(p[0])} + (${fmt(p[1])})`;
+    b.onclick = () => { if (running) return; pi = i; pb.querySelectorAll(".tool").forEach((x, j) => x.classList.toggle("sel", j === i)); draw(); };
+    pb.appendChild(b);
+  });
+  function draw() {
+    const [a, b] = pairs[pi], A = toBits(a), B = toBits(b);
+    let h = `<div class="rl">carry</div>` + Array(9).fill(0).map((_, c) => `<div class="ab c" id="c${c}"></div>`).join("");
+    h += `<div class="rl">${fmt(a)}</div><div></div>` + A.map(x => `<div class="ab a">${x}</div>`).join("");
+    h += `<div class="rl">+ (${fmt(b)})</div><div></div>` + B.map(x => `<div class="ab b">${x}</div>`).join("");
+    h += `<div></div><div class="rule"></div>`;
+    h += `<div class="rl">answer</div>` + Array(9).fill(0).map((_, c) => `<div class="ab r" id="r${c}"></div>`).join("");
+    $("adder").innerHTML = h;
+    $("addmsg").textContent = "";
+  }
+  $("addBtn").onclick = () => {
+    if (running) return;
+    draw(); running = true;
+    const [a, b] = pairs[pi], A = toBits(a), B = toBits(b);
+    let carry = 0, col = 7;
+    const step = () => {
+      document.querySelectorAll(".ab.active").forEach(x => x.classList.remove("active"));
+      if (col < 0) {
+        if (carry) { const r0 = $("r0"); r0.textContent = "1"; r0.classList.add("drop"); }
+        const sum = a + b;
+        $("addmsg").innerHTML = (carry ? "The carry falls off the end. " : "") + `Answer: <b>${bstr(toBits(sum))}</b> = <b>${fmt(sum)}</b> ✓ The normal adder did a subtraction!`;
+        running = false; fire("added"); return;
+      }
+      const s = A[col] + B[col] + carry;
+      const r = $("r" + (col + 1)); r.textContent = s % 2; r.classList.add("active");
+      carry = s > 1 ? 1 : 0;
+      if (carry) $("c" + col).textContent = "1";
+      col--; setTimeout(step, 420);
+    };
+    step();
+  };
+  draw();
+  return {};
+}
+
+/* ---------- Mission 7: Gray code ---------- */
+function grayMission(lab) {
+  let p = 0, prev = null, timer = null;
+  const gray = n => n ^ (n >> 1);
+  const b3 = n => n.toString(2).padStart(3, "0").split("");
+  const cx = 120, cy = 120, R = 108, r = 46;
+  let svg = `<svg viewBox="0 0 240 240" role="img" aria-label="Rotary encoder dial">`;
+  for (let i = 0; i < 8; i++) {
+    const a0 = (i / 8) * 2 * Math.PI - Math.PI / 2 - Math.PI / 8, a1 = a0 + Math.PI / 4;
+    const P = (rad, a) => `${cx + rad * Math.cos(a)},${cy + rad * Math.sin(a)}`;
+    svg += `<path class="sector" id="s${i}" d="M${P(r, a0)} L${P(R, a0)} A${R},${R} 0 0 1 ${P(R, a1)} L${P(r, a1)} A${r},${r} 0 0 0 ${P(r, a0)} Z"/>`;
+    const am = a0 + Math.PI / 8;
+    svg += `<text class="stext" id="t${i}" x="${cx + 78 * Math.cos(am)}" y="${cy + 78 * Math.sin(am)}">${i}</text>`;
+  }
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r - 6}" fill="#13262b" stroke="#2b4a52" stroke-width="2"/><text class="stext" x="${cx}" y="${cy}" style="font-size:30px;fill:#e9f2f0" id="dialNum">0</text></svg>`;
+  lab.innerHTML = `
+    <div class="gray">
+      <div>${svg}</div>
+      <div class="grows">
+        <div class="grow"><span class="rl" style="color:var(--bin)">Normal binary</span><div class="gb" id="n0"></div><div class="gb" id="n1"></div><div class="gb" id="n2"></div><span class="gcount" id="nc"></span></div>
+        <div class="grow"><span class="rl" style="color:var(--hex)">Gray code</span><div class="gb" id="g0"></div><div class="gb" id="g1"></div><div class="gb" id="g2"></div><span class="gcount" id="gc"></span></div>
+        <div class="tools" style="justify-content:flex-start"><button class="tool" id="back">◀ Turn back</button><button class="tool" id="fwd" style="background:var(--bulb);color:#2a2100;border-color:var(--bulb)">Turn ▶</button></div>
+        <div id="glitch" aria-live="polite"></div>
+      </div>
+    </div>`;
+  function show() {
+    for (let i = 0; i < 8; i++) { $("s" + i).classList.toggle("cur", i === p); $("t" + i).classList.toggle("cur", i === p); }
+    $("dialNum").textContent = p;
+    const N = b3(p), G = b3(gray(p));
+    const Np = prev === null ? N : b3(prev), Gp = prev === null ? G : b3(gray(prev));
+    let nc = 0, gc = 0;
+    for (let k = 0; k < 3; k++) {
+      const nch = N[k] !== Np[k], gch = G[k] !== Gp[k];
+      nc += nch; gc += gch;
+      $("n" + k).textContent = N[k]; $("n" + k).classList.toggle("chg", nch);
+      $("g" + k).textContent = G[k]; $("g" + k).classList.toggle("chg", gch);
+    }
+    $("nc").textContent = prev === null ? "" : `${nc} bit${nc === 1 ? "" : "s"} changed`;
+    $("gc").textContent = prev === null ? "" : `${gc} bit changed`;
+    clearTimeout(timer);
+    if (prev !== null && nc > 1) {
+      $("glitch").innerHTML = `⚠️ Normal binary changed <b>${nc} bits at once</b> (${Np.join("")} → ${N.join("")}). If one flips a split second early, the sensor could briefly read a completely wrong number, like <b>${misread(Np, N)}</b>!`;
+    } else $("glitch").textContent = prev === null ? "Press Turn ▶ to rotate the dial." : "Only one bit changed in both rows, so no chance of a misreading here.";
+  }
+  function misread(a, b) { // flip only the first changed bit
+    const m = a.slice(); const k = a.findIndex((x, i) => x !== b[i]); m[k] = b[k];
+    if (m.join("") === b.join("")) return b.join("");
+    const v = parseInt(m.join(""), 2); return `${m.join("")} (${v})`;
+  }
+  $("fwd").onclick = () => { prev = p; p = (p + 1) % 8; show(); if (prev === 3 && p === 4) fire("3to4"); };
+  $("back").onclick = () => { prev = p; p = (p + 7) % 8; show(); };
+  show();
+  return {};
+}
+
+/* ---------- Summary ---------- */
+function summaryMission(lab) {
+  lab.innerHTML = `
+  <table class="sum">
+    <tr><th>Method</th><th>How it works</th><th>Example</th><th>Range / use</th></tr>
+    <tr><td>Unsigned</td><td>All bits are positive place values</td><td><code>11111111</code> = 255</td><td>0 to 255</td></tr>
+    <tr><td>Sign-magnitude</td><td>MSB is the sign, the rest is the number</td><td>−5 = <code>10000101</code></td><td>−127 to +127, two zeros</td></tr>
+    <tr><td>One's complement</td><td>Flip every bit</td><td>−5 = <code>11111010</code></td><td>−127 to +127, two zeros</td></tr>
+    <tr><td>Two's complement</td><td>Flip every bit, add 1. Decode: MSB = −128</td><td>−5 = <code>11111011</code></td><td>−128 to +127, one zero, same adder circuit</td></tr>
+    <tr><td>BCD</td><td>4 bits per denary digit</td><td>93 = <code>1001 0011</code></td><td>Clocks, money</td></tr>
+    <tr><td>Gray code</td><td>Neighbours differ by one bit</td><td>3→4: <code>010</code>→<code>110</code></td><td>Rotary encoders</td></tr>
+    <tr><td>Excess-N</td><td>Store value + N</td><td>10 = <code>10001001</code> (Excess-127)</td><td>Float exponents</td></tr>
+    <tr><td>Fixed point</td><td>Point stays put: … 2 1 . ½ ¼ …</td><td>6.75 = <code>0110.1100</code></td><td>Fast, small range</td></tr>
+    <tr><td>Floating point</td><td>Sign 1 + exponent 8 + mantissa 23</td><td>6.75 = 1.1011 × 2²</td><td>Huge range, rounding errors</td></tr>
+  </table>
+  <div class="bridge">🔌 <b>Coming next: logic gates.</b> In Mission 5 the computer subtracted using only an <b>adder</b>. But what is an adder made of? Next lesson you'll build one out of <b>AND</b>, <b>OR</b> and <b>XOR</b> gates, the tiny switches inside every CPU.</div>`;
+  return {};
+}
+
+load(0);
+</script>
+</body>
+</html>
