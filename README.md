@@ -2,20 +2,20 @@
 
 Free interactive starters, recap games, exit tickets and code walkthroughs for IB Diploma and secondary Computer Science (Python).
 
-**▶ Play them here:** [https://github.com/Perpglo84/cs-classroom-games]
+**▶ Play them here:** https://perpglo84.github.io/cs-classroom-games/
 
 Every activity is a single HTML file that runs in any web browser. There's nothing to install and no logins, and they work on a SMART Board, a projector or student laptops.
 
-| Activity | Topic | Type | Best on |
+| Activity | Game | Topic | Best on |
 |---|---|---|---|
-| Flip the Bits | A1.2 Binary numbers | Starter | SMART Board |
-| Variable Vault | B2.1 Variables and data types | Recap game | Student laptops |
-| Bug Splat | B2.3 Python sequence and selection | Starter | SMART Board, two teams |
-| Locker Search | B2.4 Linear search | Starter | SMART Board |
-| Locker Run | B2.4 Linear search | Exit ticket | Student laptops |
-| Binary search, step by step | B2.4 Binary search | Code walkthrough | Projector |
-| Bubble sort, line by line | B2.4 Bubble sort | Code walkthrough | Projector or laptops |
-| Linked lists: welcome back | B4.1 Linked lists (HL) | Recap starter | Projector or laptops |
+| Binary Numbers Starter | Flip the Bits | A1.2 | SMART Board |
+| Variables and Data Types Recap Game | Variable Vault | B2.1 | Student laptops |
+| Python Sequence and Selection Starter | Bug Splat | B2.3 | SMART Board, two teams |
+| Linear Search Starter | Locker Search | B2.4 | SMART Board |
+| Linear Search Exit Ticket | Locker Run | B2.4 | Student laptops |
+| Binary Search Code Walkthrough | Step by step in Python | B2.4 | Projector |
+| Bubble Sort Code Walkthrough | Line by line in Python | B2.4 | Projector or laptops |
+| Linked Lists Recap Starter | Singly and circular linked lists | B4.1 (HL) | Projector or laptops |
 
 Topic codes follow the IB DP Computer Science guide (first assessment 2027).
 
