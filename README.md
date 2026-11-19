@@ -2,7 +2,7 @@
 
 Free interactive starters, recap games, exit tickets and code walkthroughs for IB Diploma and secondary Computer Science (Python).
 
-**▶ Play them here:** https://YOUR-USERNAME.github.io/cs-classroom-games/
+**▶ Play them here:** [https://github.com/Perpglo84/cs-classroom-games]
 
 Every activity is a single HTML file that runs in any web browser. There's nothing to install and no logins, and they work on a SMART Board, a projector or student laptops.
 
