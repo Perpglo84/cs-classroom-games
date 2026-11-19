@@ -1,0 +1,459 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bubble Sort Line by Line</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: code listing on the left, live explanation on the right, the list itself as a full-width "tray" of numbered slots below, controls docked under it. */
+:root {
+  --bg: #f3f6f8;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #5a6b78;
+  --line: #d6e0e7;
+  --code-bg: #0f1c26;
+  --code-ink: #dbe7ef;
+  --code-muted: #6d8494;
+  --code-hl: #1d3a4c;
+  --accent: #0b7a8f;
+  --accent-soft: #d8eff3;
+  --compare: #c27a00;
+  --compare-soft: #fdf0d6;
+  --swap: #c2410c;
+  --swap-soft: #fde4d8;
+  --sorted: #2f7d32;
+  --sorted-soft: #dcf0dc;
+  --kw: #7fc8f8;
+  --fn: #f5c56b;
+  --num: #b4e08a;
+  --str: #f0a6c8;
+  --cmt: #7f95a4;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-code: "JetBrains Mono", "Consolas", "Menlo", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c151c; --surface: #13212b; --ink: #e3edf3; --muted: #93a7b5; --line: #24394a;
+    --code-bg: #08121a; --code-ink: #dbe7ef; --code-muted: #5f7686; --code-hl: #183447;
+    --accent: #4cc3d6; --accent-soft: #123843;
+    --compare: #f2b33d; --compare-soft: #3a2c0e;
+    --swap: #ff8a5c; --swap-soft: #40200f;
+    --sorted: #6fcf73; --sorted-soft: #173419;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c151c; --surface: #13212b; --ink: #e3edf3; --muted: #93a7b5; --line: #24394a;
+  --code-bg: #08121a; --code-ink: #dbe7ef; --code-muted: #5f7686; --code-hl: #183447;
+  --accent: #4cc3d6; --accent-soft: #123843;
+  --compare: #f2b33d; --compare-soft: #3a2c0e;
+  --swap: #ff8a5c; --swap-soft: #40200f;
+  --sorted: #6fcf73; --sorted-soft: #173419;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+}
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  display: grid; gap: 20px;
+}
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 68ch; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+/* Code panel */
+.code {
+  background: var(--code-bg); color: var(--code-ink); border-radius: 12px;
+  padding: 14px 0; overflow-x: auto; min-width: 0;
+}
+.code-head { display: flex; justify-content: space-between; align-items: center; padding: 0 16px 10px; font-size: 12px; color: var(--code-muted); gap: 12px; flex-wrap: wrap; }
+.code-head span { font-family: var(--font-code); }
+.ln {
+  display: grid; grid-template-columns: 3.2em 1fr; align-items: center;
+  font-family: var(--font-code); font-size: 15px; line-height: 1.85;
+  white-space: pre; cursor: pointer; border-left: 4px solid transparent;
+  padding-right: 16px; min-width: max-content;
+}
+.ln:hover { background: rgba(127, 200, 248, .07); }
+.ln:focus-visible { outline: 2px solid var(--kw); outline-offset: -2px; }
+.ln .no { color: var(--code-muted); text-align: right; padding-right: 14px; user-select: none; }
+.ln.active { background: var(--code-hl); border-left-color: var(--fn); }
+.ln.active .no { color: var(--fn); }
+.ln.picked { box-shadow: inset 0 0 0 1px rgba(127,200,248,.45); }
+.ln.blank { cursor: default; }
+.ln.blank:hover { background: none; }
+.kw { color: var(--kw); } .fn { color: var(--fn); } .nm { color: var(--num); } .cm { color: var(--cmt); font-style: italic; } .op { color: #c9d6df; }
+
+/* Explanation panel */
+.explain { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.card h2 { margin: 0 0 6px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.now-line { font-family: var(--font-code); font-size: 14px; background: var(--accent-soft); color: var(--ink); padding: 6px 10px; border-radius: 6px; display: inline-block; margin-bottom: 8px; overflow-x: auto; max-width: 100%; white-space: pre; }
+.now-text { margin: 0; font-size: 17px; }
+.what-text { margin: 0; color: var(--ink); }
+.what-text code, .now-text code, .qa code { font-family: var(--font-code); font-size: .9em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+.hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+
+.vars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .vars { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.var { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; display: grid; gap: 2px; }
+.var .k { font-family: var(--font-code); font-size: 12px; color: var(--muted); }
+.var .v { font-family: var(--font-code); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.var.dim .v { color: var(--muted); font-weight: 400; }
+.var.true { background: var(--swap-soft); border-color: var(--swap); }
+.var.false { background: var(--sorted-soft); border-color: var(--sorted); }
+
+/* List tray */
+.tray { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 14px; display: grid; gap: 10px; }
+.tray-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; }
+.tray-top h2 { margin: 0; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-family: var(--font-code); }
+.lane { position: relative; height: 128px; }
+.slot-labels { position: relative; height: 22px; }
+.cell {
+  position: absolute; top: 26px; width: 12.5%; padding: 0 4px;
+  transition: left .45s cubic-bezier(.5, 0, .2, 1);
+}
+.box {
+  height: 64px; border-radius: 10px; border: 2px solid var(--line); background: var(--bg);
+  display: grid; place-items: center; font-family: var(--font-code); font-weight: 700;
+  font-size: clamp(15px, 2.6vw, 24px); font-variant-numeric: tabular-nums;
+  transition: background .25s, border-color .25s, transform .25s;
+}
+.cell.cmp .box { background: var(--compare-soft); border-color: var(--compare); }
+.cell.swp .box { background: var(--swap-soft); border-color: var(--swap); transform: translateY(-6px); }
+.cell.done .box { background: var(--sorted-soft); border-color: var(--sorted); }
+.idx { position: absolute; top: 0; width: 12.5%; text-align: center; font-family: var(--font-code); font-size: 12px; color: var(--muted); }
+.ptr {
+  position: absolute; top: 94px; width: 12.5%; text-align: center;
+  font-family: var(--font-code); font-size: 13px; font-weight: 700; color: var(--compare);
+  transition: left .3s ease;
+}
+.ptr::before { content: "▲"; display: block; font-size: 10px; line-height: 1; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 2px solid; vertical-align: -1px; margin-right: 5px; }
+
+/* Controls */
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button {
+  font: inherit; font-weight: 700; font-size: 15px; border-radius: 8px; padding: 9px 16px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button:disabled { opacity: .45; cursor: default; }
+.speed { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.progress { flex: 1 1 180px; display: grid; gap: 4px; min-width: 160px; }
+.progress .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.progress .fill { height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+.progress small { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.console { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 10px 14px; font-family: var(--font-code); font-size: 14px; min-height: 64px; overflow-x: auto; white-space: pre; }
+.console .p { color: var(--code-muted); }
+
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .lower { grid-template-columns: minmax(0, 1fr); } }
+.qa { display: grid; gap: 8px; }
+.qa details { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--bg); }
+.qa summary { cursor: pointer; font-weight: 700; }
+.qa p { margin: 8px 0 2px; }
+kbd { font-family: var(--font-code); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+@media (prefers-reduced-motion: reduce) { .cell, .ptr, .box, .fill { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">IB Computer Science · Python</div>
+    <h1>Bubble sort, line by line</h1>
+    <p class="lede">Step through the program and watch Python run it. The highlighted line is the one running now. Click any line to read what it does in general.</p>
+  </header>
+
+  <section class="main">
+    <div class="code" aria-label="Python code">
+      <div class="code-head"><span>bubble_sort.py</span><span>Click a line to explain it</span></div>
+      <div id="code"></div>
+    </div>
+
+    <div class="explain">
+      <div class="card" aria-live="polite">
+        <h2>Right now</h2>
+        <div class="now-line" id="nowLine"></div>
+        <p class="now-text" id="nowText"></p>
+      </div>
+      <div class="card">
+        <h2 id="whatTitle">What this line does</h2>
+        <p class="what-text" id="whatText"></p>
+        <p class="hint" id="whatHint"></p>
+      </div>
+      <div class="card">
+        <h2>Variables</h2>
+        <div class="vars" id="vars"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tray" aria-label="The list being sorted">
+    <div class="tray-top">
+      <h2>arr (the same list as numbers)</h2>
+      <div class="stats">
+        <span>Pass <b id="sPass">–</b></span>
+        <span>Comparisons <b id="sCmp">0</b></span>
+        <span>Swaps <b id="sSwp">0</b></span>
+      </div>
+    </div>
+    <div class="lane" id="lane"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--compare);background:var(--compare-soft)"></i>Being compared: arr[j] and arr[j + 1]</span>
+      <span><i style="border-color:var(--swap);background:var(--swap-soft)"></i>Just swapped</span>
+      <span><i style="border-color:var(--sorted);background:var(--sorted-soft)"></i>In its final place</span>
+    </div>
+    <div class="controls">
+      <button id="bReset" type="button">Reset</button>
+      <button id="bBack" type="button">◀ Back</button>
+      <button id="bStep" type="button" class="primary">Step ▶</button>
+      <button id="bPlay" type="button">Play</button>
+      <button id="bPass" type="button">Next pass ⏭</button>
+      <label class="speed" for="speed">Speed <input id="speed" type="range" min="1" max="5" value="2"></label>
+      <div class="progress"><div class="bar"><div class="fill" id="fill"></div></div><small id="stepLbl"></small></div>
+    </div>
+    <p class="hint" style="margin:0">Keyboard: <kbd>→</kbd> step, <kbd>←</kbd> back, <kbd>Space</kbd> play/pause.</p>
+  </section>
+
+  <section class="lower">
+    <div class="card">
+      <h2>Output</h2>
+      <div class="console" id="console"></div>
+    </div>
+    <div class="card">
+      <h2>Check your understanding</h2>
+      <div class="qa">
+        <details><summary>How many passes does the outer loop make for 8 items?</summary><p>7. <code>range(n - 1)</code> is <code>range(7)</code>, so <code>i</code> takes the values 0 to 6. After 7 passes the one remaining item must already be the smallest.</p></details>
+        <details><summary>How many comparisons happen when i = 2?</summary><p>5. The inner loop is <code>range(n - i - 1)</code> = <code>range(8 - 2 - 1)</code> = <code>range(5)</code>.</p></details>
+        <details><summary>How many comparisons happen in total?</summary><p>7 + 6 + 5 + 4 + 3 + 2 + 1 = 28. The number of swaps depends on how unsorted the list was. This list needs 16 swaps.</p></details>
+        <details><summary>bubble_sort has no return. Why is numbers sorted afterwards?</summary><p>A list is mutable. <code>arr</code> and <code>numbers</code> refer to the same list, so changing <code>arr</code> inside the function changes <code>numbers</code>. This is called sorting <em>in place</em>.</p></details>
+        <details><summary>What would change if line 7 used &lt; instead of &gt;?</summary><p>The list would be sorted into descending order: the smallest values would bubble to the end.</p></details>
+        <details><summary>The last passes swap nothing. How could we stop early?</summary><p>Set <code>swapped = False</code> at the start of each pass, set it to <code>True</code> inside the <code>if</code>, and <code>break</code> out of the outer loop if a pass ends with no swaps. If nothing moved, the list is already sorted.</p></details>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const START = [35, 10, 92, 21, -23, 78, 26, 13];
+
+// Code lines: html for display, plain text for the "Right now" box
+const N = '<span class="nm">', K = '<span class="kw">', F = '<span class="fn">', C = '<span class="cm">', E = '</span>';
+const LINES = [
+  { t: 'numbers = [35, 10, 92, 21, -23, 78, 26, 13]', h: `numbers = [${N}35${E}, ${N}10${E}, ${N}92${E}, ${N}21${E}, -${N}23${E}, ${N}78${E}, ${N}26${E}, ${N}13${E}]` },
+  { t: '' },
+  { t: 'def bubble_sort(arr):', h: `${K}def${E} ${F}bubble_sort${E}(arr):` },
+  { t: '    n = len(arr)', h: `    n = ${F}len${E}(arr)` },
+  { t: '    for i in range(n - 1):', h: `    ${K}for${E} i ${K}in${E} ${F}range${E}(n - ${N}1${E}):` },
+  { t: '        for j in range(n - i - 1):', h: `        ${K}for${E} j ${K}in${E} ${F}range${E}(n - i - ${N}1${E}):` },
+  { t: '            if arr[j] > arr[j + 1]:', h: `            ${K}if${E} arr[j] > arr[j + ${N}1${E}]:` },
+  { t: '                # Swap arr[j] and arr[j+1] in Python', h: `                ${C}# Swap arr[j] and arr[j+1] in Python${E}` },
+  { t: '                arr[j], arr[j + 1] = arr[j + 1], arr[j]', h: `                arr[j], arr[j + ${N}1${E}] = arr[j + ${N}1${E}], arr[j]` },
+  { t: '' },
+  { t: 'print(numbers)', h: `${F}print${E}(numbers)` },
+  { t: 'bubble_sort(numbers)', h: `${F}bubble_sort${E}(numbers)` },
+  { t: 'print(numbers)', h: `${F}print${E}(numbers)` },
+];
+
+// General explanation of each line (shown when it runs, or when clicked)
+const WHAT = {
+  1: ['Creates a list called <code>numbers</code> holding 8 integers. This is the data we want to sort into ascending order.', 'A Python list is the equivalent of an array in pseudocode.'],
+  3: ['<code>def</code> defines a function called <code>bubble_sort</code> with one parameter, <code>arr</code>. Defining a function does not run it: Python just remembers the instructions for later.', 'arr is a parameter: a placeholder for whatever list is passed in when the function is called.'],
+  4: ['<code>len(arr)</code> counts the items in the list. The answer (8) is stored in <code>n</code> so the loops can use it.', 'Storing it once in n saves calling len() again and again.'],
+  5: ['The <strong>outer loop</strong> controls the passes. <code>range(n - 1)</code> gives i = 0, 1, … 6, so there are 7 passes. Each pass pushes the largest remaining value to the end of the unsorted part.', 'Why n − 1? Once 7 values are in place, the last one left must already be in the right place.'],
+  6: ['The <strong>inner loop</strong> walks along the list comparing neighbours. <code>j</code> is the position of the left-hand item in each pair.', 'Why n − i − 1? The −i skips the i values already sorted at the end. The −1 stops j + 1 going past the last index.'],
+  7: ['Compares two <strong>adjacent</strong> items. If the left one is bigger than the right one, they are in the wrong order for an ascending sort, so the swap on line 9 runs.', 'If the condition is False, Python skips the indented block and the inner loop moves on.'],
+  8: ['A comment. Python ignores everything after <code>#</code>. It is there to help the reader.', ''],
+  9: ['Swaps the two items. Python works out the right-hand side first, <code>(arr[j + 1], arr[j])</code>, then assigns both values at once, so no temporary variable is needed.', 'In pseudocode or most other languages you need a temp: temp ← arr[j]; arr[j] ← arr[j + 1]; arr[j + 1] ← temp.'],
+  11: ['Prints the list before sorting, so we can compare the before and after.', ''],
+  12: ['<strong>Calls</strong> the function, passing <code>numbers</code> as the argument. Inside the function, <code>arr</code> refers to the <em>same</em> list as <code>numbers</code>.', 'The function returns nothing, so nothing is stored. It changes the list in place.'],
+  13: ['Prints the list again. It is now sorted because the function changed the original list.', ''],
+};
+
+// Build the execution trace
+function buildTrace() {
+  const s = []; const a = START.slice(); const out = [];
+  let cmp = 0, swp = 0, sortedFrom = 8;
+  const n = a.length;
+  const push = (line, text, x = {}) => s.push(Object.assign({
+    line, text, arr: a.slice(), out: out.slice(), cmp, swp, sortedFrom,
+    n: null, i: null, j: null, cond: null, pair: null, swapped: false, inFn: false
+  }, x));
+  const fmt = v => '[' + v.join(', ') + ']';
+
+  push(1, 'Python creates the list <code>numbers</code> and stores 8 values in it.');
+  push(3, 'Python reads the definition and remembers the function. <strong>None of the indented code runs yet.</strong> Next it jumps to line 11.');
+  out.push(fmt(a));
+  push(11, `Prints the unsorted list: <code>${fmt(a)}</code>`);
+  push(12, 'Calls <code>bubble_sort(numbers)</code>. Execution jumps into the function, and <code>arr</code> now refers to the same list as <code>numbers</code>.', { inFn: true });
+  push(4, `<code>len(arr)</code> is 8, so <code>n = 8</code>.`, { n, inFn: true });
+
+  for (let i = 0; i < n - 1; i++) {
+    const k = n - i - 1;
+    push(5, `Pass ${i + 1} of 7 starts: <code>i = ${i}</code>. The inner loop will run <code>range(${n} - ${i} - 1)</code> = <code>range(${k})</code>, so ${k} comparison${k > 1 ? 's' : ''}.`, { n, i, inFn: true });
+    for (let j = 0; j < k; j++) {
+      push(6, `<code>j = ${j}</code>. We will compare position ${j} with position ${j + 1}.`, { n, i, j, pair: [j, j + 1], inFn: true });
+      cmp++;
+      const c = a[j] > a[j + 1];
+      push(7, `Is <code>arr[${j}] > arr[${j + 1}]</code>? Is <code>${a[j]} > ${a[j + 1]}</code>? <strong>${c ? 'True' : 'False'}</strong>. ${c ? 'They are in the wrong order, so line 9 will swap them.' : 'They are already in order, so the swap is skipped.'}`, { n, i, j, pair: [j, j + 1], cond: c, inFn: true });
+      if (c) {
+        const L = a[j], R = a[j + 1];
+        a[j] = R; a[j + 1] = L; swp++;
+        push(9, `Swap! <code>${L}</code> and <code>${R}</code> change places. The list is now <code>${fmt(a)}</code>.`, { n, i, j, pair: [j, j + 1], cond: true, swapped: true, inFn: true });
+      }
+    }
+    sortedFrom = k;
+    push(6, `<code>range(${k})</code> has run out, so the inner loop ends. Pass ${i + 1} is complete: <strong>${a[k]}</strong> is now in its final place at index ${k}.${i === n - 2 ? '' : ' Back to the outer loop.'}`, { n, i, inFn: true });
+  }
+  sortedFrom = 0;
+  push(5, '<code>range(7)</code> has run out, so the outer loop ends. The function finishes and execution returns to the line after the call.', { n, inFn: true });
+  out.push(fmt(a));
+  push(13, `Prints the list again: <code>${fmt(a)}</code>. It is sorted, even though <code>bubble_sort</code> never used <code>return</code>.`);
+  return s;
+}
+const TRACE = buildTrace();
+
+// Render code
+const codeEl = document.getElementById('code');
+LINES.forEach((L, k) => {
+  const no = k + 1;
+  const d = document.createElement('div');
+  d.className = 'ln' + (L.t === '' ? ' blank' : '');
+  d.dataset.no = no;
+  d.innerHTML = `<span class="no">${no}</span><span>${L.h || ' '}</span>`;
+  if (L.t !== '') {
+    d.tabIndex = 0; d.setAttribute('role', 'button');
+    d.setAttribute('aria-label', `Explain line ${no}`);
+    d.addEventListener('click', () => pick(no));
+    d.addEventListener('keydown', e => { if (e.key === 'Enter') pick(no); });
+  }
+  codeEl.appendChild(d);
+});
+
+// Render lane
+const lane = document.getElementById('lane');
+const cells = {};
+START.forEach((v, k) => {
+  const idx = document.createElement('div'); idx.className = 'idx'; idx.style.left = (k * 12.5) + '%'; idx.textContent = '[' + k + ']';
+  lane.appendChild(idx);
+});
+START.forEach(v => {
+  const c = document.createElement('div'); c.className = 'cell';
+  c.innerHTML = `<div class="box">${v}</div>`;
+  lane.appendChild(c); cells[v] = c;
+});
+const pj = document.createElement('div'); pj.className = 'ptr'; pj.textContent = 'j'; lane.appendChild(pj);
+const pj1 = document.createElement('div'); pj1.className = 'ptr'; pj1.textContent = 'j + 1'; lane.appendChild(pj1);
+
+let pos = 0, picked = null, timer = null;
+const $ = id => document.getElementById(id);
+
+function pick(no) {
+  picked = (picked === no) ? null : no;
+  render();
+}
+
+function render() {
+  const st = TRACE[pos];
+  // code highlight
+  codeEl.querySelectorAll('.ln').forEach(d => {
+    d.classList.toggle('active', +d.dataset.no === st.line);
+    d.classList.toggle('picked', +d.dataset.no === picked);
+  });
+  $('nowLine').textContent = `Line ${st.line}:  ${LINES[st.line - 1].t.trim()}`;
+  $('nowText').innerHTML = st.text;
+
+  const show = picked || st.line;
+  $('whatTitle').textContent = picked ? `Line ${picked} explained` : `What line ${st.line} does`;
+  $('whatText').innerHTML = WHAT[show][0];
+  $('whatHint').textContent = WHAT[show][1] || '';
+
+  // variables
+  const v = [];
+  const val = x => x === null ? '–' : x;
+  v.push(['n', val(st.n)], ['i', val(st.i)], ['j', val(st.j)]);
+  if (st.pair) {
+    v.push(['arr[j]', st.arr[st.j]], ['arr[j + 1]', st.arr[st.j + 1]]);
+  } else { v.push(['arr[j]', '–'], ['arr[j + 1]', '–']); }
+  v.push(['arr[j] > arr[j + 1]', st.cond === null ? '–' : (st.cond ? 'True' : 'False')]);
+  $('vars').innerHTML = v.map(([k, x], q) => {
+    let cls = 'var' + (x === '–' ? ' dim' : '');
+    if (q === 5 && st.cond !== null) cls += st.cond ? ' true' : ' false';
+    return `<div class="${cls}"><span class="k">${k}</span><span class="v">${x}</span></div>`;
+  }).join('');
+
+  // lane
+  st.arr.forEach((val, k) => {
+    const c = cells[val];
+    c.style.left = (k * 12.5) + '%';
+    c.classList.toggle('done', k >= st.sortedFrom);
+    c.classList.toggle('cmp', !!st.pair && st.pair.includes(k) && !st.swapped && k < st.sortedFrom);
+    c.classList.toggle('swp', !!st.pair && st.pair.includes(k) && st.swapped);
+  });
+  if (st.pair) {
+    pj.hidden = pj1.hidden = false;
+    pj.style.left = (st.pair[0] * 12.5) + '%';
+    pj1.style.left = (st.pair[1] * 12.5) + '%';
+  } else { pj.hidden = pj1.hidden = true; }
+
+  $('sPass').textContent = st.i === null ? '–' : `${st.i + 1} of 7`;
+  $('sCmp').textContent = st.cmp; $('sSwp').textContent = st.swp;
+
+  // console
+  $('console').innerHTML = st.out.length ? st.out.map(o => '<span class="p">&gt;&gt;&gt;</span> ' + o).join('\n') : '<span class="p">Nothing printed yet</span>';
+
+  $('fill').style.width = (pos / (TRACE.length - 1) * 100) + '%';
+  $('stepLbl').textContent = `Step ${pos + 1} of ${TRACE.length}`;
+  $('bBack').disabled = pos === 0;
+  $('bStep').disabled = $('bPass').disabled = pos === TRACE.length - 1;
+}
+
+function go(k) { pos = Math.max(0, Math.min(TRACE.length - 1, k)); if (pos === TRACE.length - 1) stop(); render(); }
+function delay() { return [1600, 1000, 650, 380, 200][$('speed').value - 1]; }
+function play() {
+  if (pos === TRACE.length - 1) pos = 0;
+  $('bPlay').textContent = 'Pause';
+  const tick = () => { go(pos + 1); if (timer !== null) timer = setTimeout(tick, delay()); };
+  timer = setTimeout(tick, delay());
+}
+function stop() { if (timer !== null) clearTimeout(timer); timer = null; $('bPlay').textContent = 'Play'; }
+
+$('bStep').onclick = () => { stop(); go(pos + 1); };
+$('bBack').onclick = () => { stop(); go(pos - 1); };
+$('bReset').onclick = () => { stop(); picked = null; go(0); };
+$('bPlay').onclick = () => timer === null ? play() : stop();
+$('bPass').onclick = () => {
+  stop();
+  let k = pos + 1;
+  while (k < TRACE.length - 1 && !(TRACE[k].line === 5 || TRACE[k].line === 13)) k++;
+  go(k);
+};
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('bStep').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); $('bBack').click(); }
+  else if (e.key === ' ' && e.target === document.body) { e.preventDefault(); $('bPlay').click(); }
+});
+
+// Open on an informative moment: the first comparison of pass 1
+go(TRACE.findIndex(t => t.line === 7));
+</script>
+
+</body></html>

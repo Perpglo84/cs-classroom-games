@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locker Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one game card in a school corridor. Header (round, score, streak), progress row of mini lockers, then the current challenge. */
+:root{
+  --bg:#eef1f8; --panel:#ffffff; --ink:#141a3a; --muted:#59607e; --line:#cfd5e6;
+  --navy:#2e3191; --sky:#469ddd; --locker:#5a8fd0; --locker-dark:#3f6fae; --vent:rgba(10,20,60,.28);
+  --inside:#fdf8ec; --hit:#1f8a4c; --hit-bg:#e2f4e8; --miss:#b4442c; --miss-bg:#f8e4de; --gold:#c98a00;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1330; --panel:#181d45; --ink:#eef1ff; --muted:#a6acd0; --line:#2c3366;
+  --navy:#9a9ef5; --sky:#6fb6ec; --locker:#3a5f9c; --locker-dark:#2a4a7e; --vent:rgba(0,0,0,.35);
+  --inside:#26294f; --hit:#5fd18f; --hit-bg:#173a2a; --miss:#f08a6e; --miss-bg:#3d2020; --gold:#f2c14e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1330; --panel:#181d45; --ink:#eef1ff; --muted:#a6acd0; --line:#2c3366;
+  --navy:#9a9ef5; --sky:#6fb6ec; --locker:#3a5f9c; --locker-dark:#2a4a7e; --vent:rgba(0,0,0,.35);
+  --inside:#26294f; --hit:#5fd18f; --hit-bg:#173a2a; --miss:#f08a6e; --miss-bg:#3d2020; --gold:#f2c14e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0;line-height:1;text-wrap:balance}
+h1{font-size:clamp(2.6rem,8vw,4rem);color:var(--navy);font-weight:800}
+h2{font-size:clamp(1.5rem,4.5vw,2rem);font-weight:800}
+.eyebrow{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.stats{display:flex;gap:10px}
+.stat{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:6px 14px;text-align:center;min-width:84px}
+.stat .v{font-family:var(--display);font-weight:800;font-size:1.8rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat.score .v{color:var(--navy)} .stat.streak .v{color:var(--gold)}
+.progress{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:6px}
+.pip{height:30px;border-radius:4px;background:var(--locker);border:2px solid var(--locker-dark);
+  background-image:repeating-linear-gradient(to bottom,var(--vent) 0 2px,transparent 2px 6px);background-size:60% 40%;background-repeat:no-repeat;background-position:50% 20%}
+.pip.now{outline:3px solid var(--sky);outline-offset:2px}
+.pip.ok{background:var(--hit-bg);border-color:var(--hit)} .pip.bad{background:var(--miss-bg);border-color:var(--miss)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px clamp(16px,4vw,28px);display:flex;flex-direction:column;gap:16px;min-width:0}
+.timer{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.timer>div{height:100%;background:var(--sky);width:100%;transition:width .25s linear}
+.prompt{font-size:1.2rem;font-weight:700;margin:0}
+.scenario{color:var(--muted);font-style:italic;margin:0}
+code,pre{font-family:var(--mono)}
+code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.92em}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;overflow-x:auto;font-size:.95rem;line-height:1.45}
+.blank{background:var(--sky);color:#fff;border-radius:4px;padding:0 8px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opt{font:inherit;text-align:left;cursor:pointer;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:baseline;min-width:0}
+.opt b{color:var(--navy);font-family:var(--display);font-size:1.3rem}
+.opt:hover:not(:disabled){border-color:var(--sky)}
+.opt.right{border-color:var(--hit);background:var(--hit-bg)} .opt.wrong{border-color:var(--miss);background:var(--miss-bg)}
+.opt:disabled{cursor:default}
+.tf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tf .opt{justify-content:center;font-family:var(--display);font-weight:800;font-size:1.8rem;text-transform:uppercase;padding:14px}
+.row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.cell{font:inherit;cursor:pointer;border:2px solid var(--locker-dark);border-radius:8px;background:var(--locker);color:#fff;padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.cell .val{font-family:var(--display);font-weight:800;font-size:clamp(1.1rem,3.5vw,1.6rem)}
+.cell .idx{font-family:var(--mono);font-size:.75rem;opacity:.85}
+.cell.checked{background:var(--miss-bg);color:var(--miss);border-color:var(--miss)}
+.cell.found{background:var(--hit-bg);color:var(--hit);border-color:var(--hit)}
+.cell:disabled{cursor:default}
+.feedback{border-radius:12px;padding:12px 16px;font-weight:700}
+.feedback.ok{background:var(--hit-bg);color:var(--hit)} .feedback.bad{background:var(--miss-bg);color:var(--miss)}
+.feedback p{margin:.3rem 0 0;font-weight:400;color:var(--ink)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-weight:700;cursor:pointer;border-radius:10px;padding:11px 20px;border:2px solid var(--navy);background:var(--navy);color:var(--panel)}
+.btn.ghost{background:var(--panel);color:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+input[type=text]{font:inherit;padding:11px 14px;border-radius:10px;border:2px solid var(--line);background:var(--panel);color:var(--ink);min-width:0;width:min(100%,320px)}
+.err{color:var(--miss);font-size:.9rem;margin:0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.result{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.result .stat{min-width:0}
+.review{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.review li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px}
+.review .m{font-weight:800;font-size:1.1rem} .review .m.ok{color:var(--hit)} .review .m.bad{color:var(--miss)}
+.review small{color:var(--muted);display:block}
+.badge{font-family:var(--display);font-weight:800;font-size:1.4rem;color:var(--gold);text-transform:uppercase}
+@media (prefers-reduced-motion:reduce){.timer>div{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="bar">
+    <div><div class="eyebrow">Exit ticket · Linear search</div><h1>Locker Run</h1></div>
+    <div class="stats" id="stats" hidden>
+      <div class="stat score"><div class="eyebrow">Score</div><div class="v" id="score">0</div></div>
+      <div class="stat streak"><div class="eyebrow">Streak</div><div class="v" id="streak">0</div></div>
+    </div>
+  </div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <main class="card" id="card"></main>
+</div>
+
+<script>
+const NUMS=[10,35,21,-23,26,13,78,92];
+const Q=[
+  {type:'trace',title:'Trace it',prompt:'Search <code>numbers</code> for <b>26</b>. Click the lockers in the order linear search checks them.',
+   arr:NUMS,target:26,explain:'Linear search starts at index 0 and checks each item in turn: 10, 35, 21, -23, then 26 at index 4.'},
+  {type:'mcq',title:'Return value',prompt:'What does <code>linear_search(numbers, 26)</code> return?',showArr:true,
+   options:['26','5','4','-1'],answer:2,explain:'It returns the index, not the value. 26 is at index 4 (indexes start at 0).'},
+  {type:'mcq',title:'Count the checks',prompt:'How many comparisons does it make to find 26?',showArr:true,
+   options:['4','8','1','5'],answer:3,explain:'It compares indexes 0, 1, 2, 3 and 4, so 5 comparisons.'},
+  {type:'mcq',title:'Not in the list',prompt:'What happens when you search <code>numbers</code> for <b>50</b>?',showArr:true,
+   options:['Returns -1 after checking all 8 items','Returns -1 after checking 1 item','Returns 0','The program crashes'],answer:0,
+   explain:'50 isn\'t there, so every item must be checked before it can return -1. That\'s the worst case.'},
+  {type:'mcq',title:'Fill the gap',prompt:'Which goes in the blank?',
+   code:'def linear_search(my_list, target):\n    for i in range(len(my_list)):\n        if my_list[i] == <span class="blank">____</span>:\n            return i\n    return -1',
+   options:['target','i','my_list','len(my_list)'],answer:0,explain:'Each item, my_list[i], is compared with the target value.'},
+  {type:'mcq',title:'Where does it go?',prompt:'Where must <code>return -1</code> go?',
+   options:['Inside the if, before return i','Inside the loop, after the if','After the loop has finished','Before the loop starts'],answer:2,
+   explain:'Only after the loop has checked every item do you know the target isn\'t there. Inside the loop it would stop after one check.'},
+  {type:'mcq',title:'The twist',prompt:'Using your worksheet function, what does this return?',
+   code:'fruits = ["apple", "Banana", "orange", "Grapefruit"]\nlinear_search(fruits, "banana", True)   # case_sensitive',
+   options:['True','False','1','"Banana"'],answer:1,explain:'Case-sensitive: "banana" doesn\'t match "Banana", so it returns False.'},
+  {type:'mcq',title:'Big O',prompt:'What is the worst-case time complexity of linear search?',
+   options:['O(1)','O(log n)','O(n)','O(n²)'],answer:2,explain:'O(n): in the worst case every one of the n items is checked once.'},
+  {type:'tf',title:'True or false?',scenario:'A social media app stores 1,000,000 usernames in an unsorted Python list.',
+   statement:'Linear search can find a user in this list.',answer:true,explain:'True. Linear search works on unsorted data.'},
+  {type:'tf',title:'True or false?',scenario:'A social media app stores 1,000,000 usernames in an unsorted Python list.',
+   statement:'Binary search can be used on this list as it is.',answer:false,explain:'False. Binary search only works on a sorted list.'},
+  {type:'tf',title:'True or false?',scenario:'A social media app stores 1,000,000 usernames in an unsorted Python list.',
+   statement:'Linear search needs at most 20 checks to find a user.',answer:false,
+   explain:'False. Linear search may need 1,000,000 checks. About 20 is binary search on a sorted list.'}
+];
+const TIME=30;
+const card=document.getElementById('card'), prog=document.getElementById('progress');
+let player='', idx=0, score=0, streak=0, best=0, results=[], timer=null, left=TIME, locked=false;
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function pips(){prog.innerHTML=Q.map((_,i)=>`<div class="pip ${results[i]===true?'ok':results[i]===false?'bad':''} ${i===idx&&results[i]===undefined&&player?'now':''}"></div>`).join('');}
+function stats(){document.getElementById('score').textContent=score;document.getElementById('streak').textContent=streak;}
+function arrHTML(){return `<pre>numbers = [${NUMS.join(', ')}]</pre>`;}
+
+function intro(){
+  pips();
+  card.innerHTML=`<h2>Ready to run?</h2>
+    <p style="margin:0">11 quick challenges on today's lesson: trace a search, read the code, and test the twist. You have ${TIME} seconds for each. Correct answers score 100 points, plus a speed bonus and a streak bonus.</p>
+    <label for="name" class="eyebrow">Your first name</label>
+    <div class="actions"><input id="name" type="text" autocomplete="given-name" maxlength="30"><button class="btn" id="go" type="button">Start</button></div>
+    <p class="err" id="err" hidden>Enter your name first.</p>`;
+  const go=()=>{const n=document.getElementById('name').value.trim(); if(!n){document.getElementById('err').hidden=false;return;}
+    player=n; document.getElementById('stats').hidden=false; idx=0; score=0; streak=0; best=0; results=[]; stats(); ask();};
+  document.getElementById('go').addEventListener('click',go);
+  document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+  document.getElementById('name').addEventListener('input',()=>document.getElementById('err').hidden=true);
+}
+
+function startTimer(){
+  left=TIME; const bar=document.getElementById('tbar'); bar.style.width='100%';
+  clearInterval(timer);
+  timer=setInterval(()=>{left-=0.25; bar.style.width=Math.max(0,left/TIME*100)+'%'; if(left<=0){clearInterval(timer); finish(false,'Time\'s up!');}},250);
+}
+
+function ask(){
+  locked=false; pips(); const q=Q[idx];
+  let body=`<div class="bar"><div class="eyebrow">Locker ${idx+1} of ${Q.length} · ${q.title}</div></div>
+    <div class="timer" aria-hidden="true"><div id="tbar"></div></div>`;
+  if(q.type==='tf'){
+    body+=`<p class="scenario">${q.scenario}</p><p class="prompt">${q.statement}</p>
+      <div class="tf"><button class="opt" data-v="true" type="button">True</button><button class="opt" data-v="false" type="button">False</button></div>`;
+  } else if(q.type==='trace'){
+    body+=`<p class="prompt">${q.prompt}</p><div class="row" id="row">${q.arr.map((v,i)=>`<button class="cell" data-i="${i}" type="button" aria-label="index ${i}, value ${v}"><span class="val">${v}</span><span class="idx">[${i}]</span></button>`).join('')}</div>`;
+  } else {
+    body+=`<p class="prompt">${q.prompt}</p>${q.showArr?arrHTML():''}${q.code?`<pre>${q.code}</pre>`:''}
+      <div class="opts">${q.options.map((o,i)=>`<button class="opt" data-i="${i}" type="button"><b>${'ABCD'[i]}</b><span>${esc(o)}</span></button>`).join('')}</div>`;
+  }
+  body+=`<div id="fb"></div>`;
+  card.innerHTML=body; startTimer();
+
+  if(q.type==='trace'){
+    const goal=q.arr.indexOf(q.target); let next=0;
+    card.querySelectorAll('.cell').forEach(b=>b.addEventListener('click',()=>{
+      if(locked) return; const i=+b.dataset.i;
+      if(i!==next){ b.classList.add('checked'); finish(false,`Linear search would check index ${next} next.`); return; }
+      if(i===goal){ b.classList.add('found'); finish(true,'Found it at index '+goal+'!'); }
+      else { b.classList.add('checked'); b.disabled=true; next++; }
+    }));
+  } else {
+    card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+      if(locked) return;
+      const ok = q.type==='tf' ? (b.dataset.v==='true')===q.answer : +b.dataset.i===q.answer;
+      b.classList.add(ok?'right':'wrong');
+      if(!ok){ const r = q.type==='tf' ? card.querySelector(`.opt[data-v="${q.answer}"]`) : card.querySelector(`.opt[data-i="${q.answer}"]`); r&&r.classList.add('right'); }
+      finish(ok, ok?'Correct!':'Not quite.');
+    }));
+  }
+}
+
+function finish(ok,headline){
+  if(locked) return; locked=true; clearInterval(timer);
+  card.querySelectorAll('button.opt,button.cell').forEach(b=>b.disabled=true);
+  const cq=Q[idx];
+  if(!ok && cq.type!=='trace'){ const r = cq.type==='tf' ? card.querySelector(`.opt[data-v="${cq.answer}"]`) : card.querySelector(`.opt[data-i="${cq.answer}"]`); r&&r.classList.add('right'); }
+  let gained=0;
+  if(ok){ streak++; best=Math.max(best,streak); gained=100+Math.round(Math.max(0,left)*2)+(streak>=3?25:0); score+=gained; }
+  else streak=0;
+  results[idx]=ok; stats(); pips();
+  const q=Q[idx];
+  document.getElementById('fb').innerHTML=`<div class="feedback ${ok?'ok':'bad'}" role="status">${headline}${ok?` +${gained} points${streak>=3?' (streak bonus!)':''}`:''}<p>${q.explain}</p></div>
+    <div class="actions" style="margin-top:12px"><button class="btn" id="next" type="button">${idx<Q.length-1?'Next locker':'See my result'}</button></div>`;
+  const n=document.getElementById('next'); n.focus();
+  n.addEventListener('click',()=>{ idx++; idx<Q.length?ask():end(); });
+}
+
+function end(){
+  pips();
+  const right=results.filter(Boolean).length;
+  const rank= right===Q.length?'Perfect run':right>=9?'Search master':right>=6?'Solid searcher':'Keep practising';
+  card.innerHTML=`<div class="eyebrow">Run complete</div><h2>Well done, ${esc(player)}!</h2>
+    <div class="badge">${rank}</div>
+    <div class="result">
+      <div class="stat"><div class="eyebrow">Correct</div><div class="v">${right}/${Q.length}</div></div>
+      <div class="stat score"><div class="eyebrow">Score</div><div class="v">${score}</div></div>
+      <div class="stat streak"><div class="eyebrow">Best streak</div><div class="v">${best}</div></div>
+    </div>
+    <p style="margin:0">Show this screen to your teacher before you leave.</p>
+    <ul class="review">${Q.map((q,i)=>`<li><span class="m ${results[i]?'ok':'bad'}">${results[i]?'✓':'✗'}</span><span><b>${i+1}. ${q.title}</b><small>${q.explain}</small></span></li>`).join('')}</ul>
+    <div class="actions"><button class="btn ghost" id="again" type="button">Play again</button></div>`;
+  document.getElementById('again').addEventListener('click',()=>{document.getElementById('stats').hidden=true;player='';intro();});
+}
+intro();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Search Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: projector stage. Array strip on top, code | explanation below, controls pinned at the bottom of the stage. */
+:root{
+  --bg:#EEF2F6; --panel:#FFFFFF; --ink:#13202C; --muted:#5B6B7A; --line:#D5DDE5;
+  --code-bg:#0F1A24; --code-ink:#DCE6EF; --code-dim:#6F8496; --code-hl:#1E3346;
+  --low:#0B8577; --high:#C9701C; --mid:#6A4BD6; --found:#25934A; --out:#B9C3CD;
+  --accent:#1F5FBF;
+  --kw:#7FB4FF; --num:#F5B26B; --str:#9CDB8A; --cm:#71879A; --fn:#E7C6FF;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B131B; --panel:#13202C; --ink:#E6EDF3; --muted:#93A4B4; --line:#24384A;
+  --code-bg:#08111A; --code-hl:#1A3044; --out:#2A3A49;
+  --low:#2BC2AE; --high:#F0A050; --mid:#9C85FF; --found:#4CC977; --accent:#6EA8FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B131B; --panel:#13202C; --ink:#E6EDF3; --muted:#93A4B4; --line:#24384A;
+  --code-bg:#08111A; --code-hl:#1A3044; --out:#2A3A49;
+  --low:#2BC2AE; --high:#F0A050; --mid:#9C85FF; --found:#4CC977; --accent:#6EA8FF; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 24px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+h1{font-size:1.6rem;margin:0;text-wrap:balance}
+.phase{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.count{color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+
+/* array strip */
+.strip{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px 10px}
+.strip-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.9rem;color:var(--muted);margin-bottom:6px}
+.strip-head b{color:var(--ink)}
+.arr{position:relative;height:150px}
+.cell{position:absolute;top:0;width:12.5%;padding:0 4px;transition:left .7s cubic-bezier(.5,0,.2,1);text-align:center}
+.idx{font-family:var(--mono);font-size:.8rem;color:var(--muted);height:20px}
+.box{height:58px;border:2px solid var(--line);border-radius:8px;display:grid;place-items:center;font-family:var(--mono);
+  font-weight:600;font-size:clamp(.95rem,2.6vw,1.5rem);background:var(--panel);transition:all .35s}
+.cell.out .box{opacity:.35;background:repeating-linear-gradient(135deg,transparent 0 6px,var(--out) 6px 8px)}
+.cell.inr .box{border-color:var(--ink)}
+.cell.mid .box{border-color:var(--mid);box-shadow:0 0 0 3px color-mix(in srgb,var(--mid) 30%,transparent)}
+.cell.found .box{border-color:var(--found);background:color-mix(in srgb,var(--found) 18%,var(--panel));box-shadow:0 0 0 4px color-mix(in srgb,var(--found) 30%,transparent)}
+.tags{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:6px}
+.tag{font-family:var(--mono);font-size:.75rem;font-weight:600;color:#fff;border-radius:4px;padding:1px 7px;line-height:1.5}
+.tag::before{content:"▲ "}
+.tag.low{background:var(--low)}.tag.high{background:var(--high)}.tag.mid{background:var(--mid)}
+
+/* main grid */
+.main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:14px 0;overflow-x:auto;min-height:200px}
+.ln{display:flex;font-family:var(--mono);font-size:clamp(.82rem,1.5vw,1.02rem);line-height:1.75;white-space:pre;padding-right:16px;border-left:4px solid transparent}
+.ln .no{width:3em;flex:none;text-align:right;padding-right:1em;color:var(--code-dim);user-select:none}
+.ln.hl{background:var(--code-hl);border-left-color:var(--num)}
+.ln.new{animation:in .45s ease-out}
+@keyframes in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.kw{color:var(--kw)}.n{color:var(--num)}.s{color:var(--str)}.c{color:var(--cm);font-style:italic}.f{color:var(--fn)}
+
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.explain{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.explain h2{font-size:1.3rem;margin:0 0 8px;text-wrap:balance}
+.explain p{margin:0 0 10px;max-width:62ch}
+.explain p:last-child{margin-bottom:0}
+.explain code,.ask code{font-family:var(--mono);font-size:.92em;background:color-mix(in srgb,var(--accent) 12%,transparent);padding:1px 5px;border-radius:4px}
+.calc{font-family:var(--mono);font-size:1.05rem;background:var(--bg);border-radius:8px;padding:8px 12px;margin:4px 0 10px;overflow-x:auto}
+.ask{border:2px dashed var(--accent);border-radius:12px;padding:12px 16px;background:var(--panel)}
+.ask .lbl{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.ask p{margin:4px 0 8px}
+.ask button{font:inherit;font-size:.9rem;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:3px 10px;cursor:pointer}
+.ask .ans{margin-top:8px;font-weight:700}
+.vars{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.var{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.var .k{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.var .v{font-family:var(--mono);font-size:1.3rem;font-weight:600;font-variant-numeric:tabular-nums}
+.var.low .v{color:var(--low)}.var.high .v{color:var(--high)}.var.mid .v{color:var(--mid)}
+.var.chg{animation:flash .9s}
+@keyframes flash{0%{background:color-mix(in srgb,var(--num) 45%,var(--panel))}100%{background:var(--panel)}}
+.console{font-family:var(--mono);background:var(--code-bg);color:var(--str);border-radius:10px;padding:10px 14px;font-size:1rem}
+.console::before{content:">>> ";color:var(--code-dim)}
+
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.controls button{font:inherit;font-weight:700;border-radius:10px;padding:10px 18px;cursor:pointer;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+.controls #next{background:var(--accent);border-color:var(--accent);color:#fff;padding-inline:28px}
+.controls button:disabled{opacity:.4;cursor:default}
+.controls .hint{color:var(--muted);font-size:.85rem;margin-left:auto}
+button:focus-visible{outline:3px solid var(--num);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="phase" id="phase"></div>
+      <h1>Binary search, step by step</h1>
+    </div>
+    <div class="count" id="count"></div>
+  </header>
+  <div class="bar"><i id="prog"></i></div>
+
+  <section class="strip" id="stage">
+    <div class="strip-head"><span id="arrLabel"></span><span id="interval"></span></div>
+    <div class="arr" id="arr"></div>
+  </section>
+
+  <div class="main">
+    <div class="code" id="code" aria-label="Python code"></div>
+    <div class="side">
+      <div class="explain" aria-live="polite"><h2 id="title"></h2><div id="text"></div></div>
+      <div class="ask" id="ask" hidden><div class="lbl">Ask the class</div><p id="askQ"></p><button id="askBtn" type="button">Show answer</button><div class="ans" id="askA" hidden></div></div>
+      <div class="vars" id="vars" hidden></div>
+      <div class="console" id="console" hidden></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="back" type="button">← Back</button>
+    <button id="next" type="button">Next →</button>
+    <button id="restart" type="button">Restart</button>
+    <span class="hint">Click anywhere, or use → / space / a clicker</span>
+  </div>
+</div>
+
+<script>
+const RAW=[10,35,21,-23,26,13,78,92];
+const SORTED=[...RAW].sort((a,b)=>a-b);
+const K=s=>`<span class="kw">${s}</span>`, N=s=>`<span class="n">${s}</span>`, C=s=>`<span class="c">${s}</span>`, F=s=>`<span class="f">${s}</span>`;
+const LINES=[
+ `numbers = [${RAW.map(N).join(', ')}]`,
+ `numbers.${F('sort')}()`,
+ ``,
+ `${K('def')} ${F('binary_search')}(my_list, target):`,
+ `    low = ${N(0)}`,
+ `    high = ${F('len')}(my_list) - ${N(1)}`,
+ `    ${K('while')} low &lt;= high:`,
+ `        mid = (low + high) // ${N(2)}  ${C('# Integer division in Python')}`,
+ `        ${K('if')} my_list[mid] == target:`,
+ `            ${K('return')} mid`,
+ `        ${K('elif')} my_list[mid] &lt; target:`,
+ `            low = mid + ${N(1)}`,
+ `        ${K('else')}:`,
+ `            high = mid - ${N(1)}`,
+ `    ${K('return')} -${N(1)}  ${C('# Target not found')}`,
+ ``,
+ `value = ${N(13)}`,
+ `result = ${F('binary_search')}(numbers, value)`,
+ `${F('print')}(<span class="s">f"{value} found at index {result}"</span>)`
+];
+const ALL=LINES.length;
+const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const calc=s=>`<div class="calc">${s}</div>`;
+
+// Each step: reveal (lines shown), hl (highlighted lines), array state, explanation.
+const STEPS=[
+ {ph:'Building the code',rv:1,hl:[0],sorted:false,t:'Start with some data',
+  x:`<p>Here is a list of 8 numbers in no particular order.</p><p>Binary search finds a value by repeatedly cutting the list in half. That only works if the list is <b>sorted</b>.</p>`,
+  q:'Could we use binary search on this list as it is?',a:'No. If the list is unsorted, looking at the middle item tells us nothing about which half the target is in.'},
+ {rv:2,hl:[1],t:'Sort the list first',
+  x:`<p><code>numbers.sort()</code> puts the list into ascending order, in place.</p><p>Now every item is bigger than the one to its left. That ordering is what lets us throw away half the list after a single comparison.</p>`},
+ {rv:4,hl:[3],t:'Define the function',
+  x:`<p><code>binary_search</code> takes two parameters:</p><p><code>my_list</code> is the sorted list to search.<br><code>target</code> is the value we are looking for.</p><p>It will <b>return the index</b> where the target is, or <b>-1</b> if it is not there.</p>`},
+ {rv:5,hl:[4],low:0,t:'low marks the left edge',
+  x:`<p><code>low</code> holds the index of the <b>first</b> item we still need to search.</p><p>At the start that is index 0, the beginning of the list.</p>`},
+ {rv:6,hl:[5],low:0,high:7,t:'high marks the right edge',
+  x:`<p><code>high</code> holds the index of the <b>last</b> item we still need to search.</p>${calc('len(my_list) - 1  →  8 - 1  →  7')}<p>The list has 8 items, but indexes run from 0 to 7, so we subtract 1.</p>`,
+  q:'What would go wrong if we forgot the "- 1"?',a:'high would be 8, and my_list[8] does not exist, so Python could raise an IndexError.'},
+ {rv:7,hl:[6],low:0,high:7,t:'Loop while there is something left to search',
+  x:`<p>Everything from <code>low</code> to <code>high</code> is the <b>search interval</b>: the part of the list where the target could still be.</p><p>While <code>low &lt;= high</code>, the interval has at least one item, so we keep looking. If <code>low</code> passes <code>high</code>, the interval is empty.</p>`,
+  q:'Why <= and not < ?',a:'When low and high are equal there is still one item left to check. With < the loop would stop before checking it.'},
+ {rv:8,hl:[7],low:0,high:7,mid:3,t:'Find the middle',
+  x:`<p><code>mid</code> is the index halfway between <code>low</code> and <code>high</code>.</p>${calc('(0 + 7) // 2  →  7 // 2  →  3')}<p><code>//</code> is <b>integer division</b>: it divides and drops the remainder, so <code>mid</code> is always a whole number we can use as an index. 7 / 2 would give 3.5, which is not a valid index.</p>`},
+ {rv:10,hl:[8,9],t:'Is the middle item the target?',
+  x:`<p>Compare the middle item with the target.</p><p>If they are equal, we have found it. <code>return mid</code> sends back the index and the function stops straight away.</p>`},
+ {rv:12,hl:[10,11],t:'Middle is too small: go right',
+  x:`<p>If the middle item is <b>smaller</b> than the target, the target must be to its right, because the list is sorted.</p><p>So we discard <code>mid</code> and everything to its left by moving <code>low</code> to <code>mid + 1</code>.</p>`,
+  q:'Why mid + 1 and not just mid?',a:'We have already checked my_list[mid] and it was not the target, so there is no point keeping it in the interval.'},
+ {rv:14,hl:[12,13],t:'Middle is too big: go left',
+  x:`<p>Otherwise the middle item is <b>bigger</b> than the target, so the target must be to its left.</p><p>We move <code>high</code> to <code>mid - 1</code>. The loop then goes round again with an interval about half the size.</p>`},
+ {rv:15,hl:[14],t:'Not in the list',
+  x:`<p>If the loop finishes, <code>low</code> has passed <code>high</code> and the interval is empty. The target is not in the list.</p><p>We return <b>-1</b>. Real positions start at 0, so -1 is a clear signal for "not found".</p>`},
+ {rv:ALL,hl:[16,17,18],t:'Call the function',
+  x:`<p>Now we search for <b>13</b>.</p><p><code>result</code> stores whatever the function returns, and the last line prints it.</p><p>Next, let's trace exactly what happens.</p>`,
+  q:'Before we trace: how many passes of the loop do you predict?',a:'3 passes. Watch the interval shrink: 8 items, then 3, then 1.'},
+
+ {ph:'Tracing: search for 13',rv:ALL,hl:[17,4,5],tr:1,low:0,high:7,t:'Set up the interval',
+  x:`<p>The function is called with <code>target = 13</code>.</p><p><code>low = 0</code> and <code>high = 7</code>, so the whole list is the search interval.</p>`},
+ {hl:[6],tr:1,low:0,high:7,t:'Pass 1: check the loop condition',x:calc('low &lt;= high  →  0 &lt;= 7  →  True')+`<p>The interval is not empty, so we enter the loop.</p>`},
+ {hl:[7],tr:1,low:0,high:7,mid:3,t:'Pass 1: find the middle',x:calc('mid = (0 + 7) // 2 = 3')+`<p><code>my_list[3]</code> is <b>21</b>.</p>`},
+ {hl:[8],tr:1,low:0,high:7,mid:3,t:'Pass 1: is 21 the target?',x:calc('21 == 13  →  False')+`<p>Not found yet.</p>`},
+ {hl:[10],tr:1,low:0,high:7,mid:3,t:'Pass 1: is 21 smaller than 13?',x:calc('21 &lt; 13  →  False')+`<p>So we skip this branch and go to <code>else</code>.</p>`},
+ {hl:[12,13],tr:1,low:0,high:2,t:'Pass 1: discard the right half',
+  x:calc('high = mid - 1 = 3 - 1 = 2')+`<p>21 is bigger than 13, so 13 must be to the left.</p><p>Indexes 3 to 7 are gone: <b>5 items ruled out with one comparison</b>.</p>`},
+ {hl:[6],tr:1,low:0,high:2,t:'Pass 2: check the loop condition',x:calc('0 &lt;= 2  →  True')+`<p>Three items left, so we loop again.</p>`},
+ {hl:[7],tr:1,low:0,high:2,mid:1,t:'Pass 2: find the middle',x:calc('mid = (0 + 2) // 2 = 1')+`<p><code>my_list[1]</code> is <b>10</b>.</p>`},
+ {hl:[8],tr:1,low:0,high:2,mid:1,t:'Pass 2: is 10 the target?',x:calc('10 == 13  →  False')},
+ {hl:[10,11],tr:1,low:2,high:2,t:'Pass 2: discard the left half',
+  x:calc('10 &lt; 13  →  True')+calc('low = mid + 1 = 1 + 1 = 2')+`<p>10 is smaller than 13, so 13 must be to the right. Indexes 0 and 1 are gone.</p>`},
+ {hl:[6],tr:1,low:2,high:2,t:'Pass 3: check the loop condition',x:calc('2 &lt;= 2  →  True')+`<p>One item left. This is exactly why the condition is <code>&lt;=</code>: with <code>&lt;</code> we would stop without checking it.</p>`},
+ {hl:[7],tr:1,low:2,high:2,mid:2,t:'Pass 3: find the middle',x:calc('mid = (2 + 2) // 2 = 2')+`<p><code>my_list[2]</code> is <b>13</b>.</p>`},
+ {hl:[8,9],tr:1,low:2,high:2,mid:2,found:2,t:'Pass 3: found it',x:calc('13 == 13  →  True')+`<p>The function returns <b>2</b> and stops immediately.</p>`},
+ {hl:[17,18],tr:1,found:2,ret:2,out:'13 found at index 2',t:'Print the result',x:`<p><code>result</code> is 2, so the program prints the message below.</p>`},
+ {ph:'Summary',hl:[],tr:1,found:2,ret:2,out:'13 found at index 2',t:'Why binary search is fast',
+  x:`<p>Each pass <b>halves</b> the search interval: 8 items, then 3, then 1.</p><p>For 8 items, binary search needs at most 4 comparisons. For 1,000,000 items it needs about 20. A linear search could need all 1,000,000.</p><p>Its time complexity is <b>O(log n)</b>, compared with <b>O(n)</b> for linear search.</p><p><b>The catch:</b> the list must be sorted first.</p>`,
+  q:'What would the function return if we searched for 50?',a:'-1. The interval shrinks until low passes high (low = 6, high = 5), the loop ends and return -1 runs.'}
+];
+// carry phase/reveal forward
+let ph=STEPS[0].ph,rv=1,lm;
+STEPS.forEach(s=>{ if(s.mid!==undefined)lm=s.mid; s.vm=s.tr&&s.found===undefined?lm:s.mid; if(s.ph)ph=s.ph; else s.ph=ph; if(s.rv)rv=s.rv; else s.rv=rv; if(s.sorted===undefined)s.sorted=true; });
+
+const $=id=>document.getElementById(id);
+const arrEl=$('arr');
+const cells=RAW.map(v=>{const d=document.createElement('div');d.className='cell';
+  d.innerHTML=`<div class="idx"></div><div class="box">${v}</div><div class="tags"></div>`;arrEl.appendChild(d);return {v,d};});
+
+let cur=0,prev=null;
+function render(){
+  const s=STEPS[cur], p=prev;
+  $('phase').textContent=s.ph;
+  $('count').textContent=`Step ${cur+1} of ${STEPS.length}`;
+  $('prog').style.width=((cur+1)/STEPS.length*100)+'%';
+  // code
+  const prevRv=p?p.rv:0;
+  $('code').innerHTML=LINES.slice(0,s.rv).map((h,i)=>`<div class="ln${s.hl.includes(i)?' hl':''}${i>=prevRv&&p&&s.rv>prevRv?' new':''}"><span class="no">${i+1}</span><span class="tx">${h||' '}</span></div>`).join('');
+  // array
+  const order=s.sorted?SORTED:RAW;
+  $('arrLabel').innerHTML=s.sorted?'<b>my_list</b> (sorted)':'<b>numbers</b> (unsorted)';
+  const hasI=s.low!==undefined&&s.high!==undefined;
+  $('interval').innerHTML=s.found!==undefined?`<b>Found at index ${s.found}</b>`:hasI?`Search interval: indexes <b>${s.low}</b> to <b>${s.high}</b> (${s.high-s.low+1} item${s.high-s.low?'s':''})`:'';
+  cells.forEach(c=>{
+    const i=order.indexOf(c.v);
+    c.d.style.left=(i*12.5)+'%';
+    c.d.querySelector('.idx').textContent='['+i+']';
+    const out=(hasI&&(i<s.low||i>s.high))||(s.found!==undefined&&i!==s.found&&s.tr);
+    c.d.className='cell'+(out?' out':'')+(hasI&&!out?' inr':'')+(s.mid===i?' mid':'')+(s.found===i?' found':'');
+    let tags='';
+    if(s.low===i)tags+='<span class="tag low">low</span>';
+    if(s.mid===i)tags+='<span class="tag mid">mid</span>';
+    if(s.high===i)tags+='<span class="tag high">high</span>';
+    c.d.querySelector('.tags').innerHTML=tags;
+  });
+  // explanation
+  $('title').textContent=s.t; $('text').innerHTML=s.x;
+  $('ask').hidden=!s.q; if(s.q){$('askQ').textContent=s.q;$('askA').textContent=s.a;$('askA').hidden=true;$('askBtn').textContent='Show answer';}
+  // variables (trace only)
+  const vEl=$('vars'); vEl.hidden=!s.tr;
+  if(s.tr){
+    const f=x=>x===undefined?'–':x;
+    const vals=[['target','',13],['low','low',s.low],['high','high',s.high],['mid','mid',s.vm],['my_list[mid]','',s.vm!==undefined?SORTED[s.vm]:undefined]];
+    if(s.ret!==undefined)vals.push(['result','',s.ret]);
+    const pv=p&&p.tr?{target:13,low:p.low,high:p.high,mid:p.vm,'my_list[mid]':p.vm!==undefined?SORTED[p.vm]:undefined,result:p.ret}:{};
+    vEl.innerHTML=vals.map(([k,c,v])=>`<div class="var ${c}${p&&p.tr&&pv[k]!==v&&v!==undefined?' chg':''}"><div class="k">${k}</div><div class="v">${f(v)}</div></div>`).join('');
+  }
+  $('console').hidden=!s.out; $('console').textContent=s.out||'';
+  $('back').disabled=cur===0; $('next').disabled=cur===STEPS.length-1;
+}
+function go(n){ if(n<0||n>=STEPS.length)return; prev=STEPS[cur]; if(n<cur)prev=null; cur=n; render(); }
+$('next').onclick=e=>{e.stopPropagation();go(cur+1)};
+$('back').onclick=e=>{e.stopPropagation();go(cur-1)};
+$('restart').onclick=e=>{e.stopPropagation();prev=null;cur=0;render()};
+$('askBtn').onclick=e=>{e.stopPropagation();const a=$('askA');a.hidden=!a.hidden;e.target.textContent=a.hidden?'Show answer':'Hide answer'};
+document.addEventListener('click',e=>{ if(e.target.closest('button,a,.controls,.ask'))return; if(window.getSelection&&String(window.getSelection()))return; go(cur+1); });
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){ if(e.key!==' '&&e.target.tagName==='BUTTON'&&e.key==='Enter')return; e.preventDefault(); go(cur+1); }
+  else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(cur-1);}
+  else if(e.key==='Home'){prev=null;cur=0;render();}
+});
+render();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Linked Lists Recap Starter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: projector-first single column; diagram stage on top, working panel below */
+:root{
+  --bg:#eef1f6; --panel:#ffffff; --ink:#18223a; --muted:#5a6680; --line:#d3d9e6;
+  --accent:#2f4fd8; --accent-soft:#e3e8fc; --hot:#c46a00; --hot-soft:#fff1dc;
+  --ok:#1f8a5b; --ok-soft:#dcf3e8; --bad:#c23b3b; --bad-soft:#fbe2e2;
+  --node:#dfe5ee; --node-ptr:#c9d2df; --node-line:#5b6b84; --arrow:#4a5873; --code-bg:#f4f6fb;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10162a; --panel:#18203a; --ink:#e7ebf7; --muted:#9aa6c4; --line:#2c375a;
+  --accent:#8aa2ff; --accent-soft:#232f5c; --hot:#f5b843; --hot-soft:#3a2f17;
+  --ok:#5fd3a0; --ok-soft:#173a2c; --bad:#ff8a8a; --bad-soft:#432020;
+  --node:#2a3556; --node-ptr:#333f66; --node-line:#7d8cb3; --arrow:#a9b5d6; --code-bg:#121a31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10162a; --panel:#18203a; --ink:#e7ebf7; --muted:#9aa6c4; --line:#2c375a;
+  --accent:#8aa2ff; --accent-soft:#232f5c; --hot:#f5b843; --hot-soft:#3a2f17;
+  --ok:#5fd3a0; --ok-soft:#173a2c; --bad:#ff8a8a; --bad-soft:#432020;
+  --node:#2a3556; --node-ptr:#333f66; --node-line:#7d8cb3; --arrow:#a9b5d6; --code-bg:#121a31; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.6rem,3.4vw,2.4rem);line-height:1.05;margin:4px 0 0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:clamp(1.2rem,2.3vw,1.55rem);line-height:1.2;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0 0 6px}
+button{font:inherit;cursor:pointer;color:inherit}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 14px;font-weight:700}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.opt:focus-visible,.chip:focus-visible{outline:3px solid var(--hot);outline-offset:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+code,.mono{font-family:var(--f-mono);font-size:.92em}
+pre.code{font-family:var(--f-mono);background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 0;margin:0;overflow-x:auto;font-size:.92rem;line-height:1.55}
+pre.code .ln{display:block;padding:0 14px 0 0;white-space:pre;border-left:4px solid transparent;transition:background .3s}
+pre.code .ln::before{content:attr(data-n);display:inline-block;width:2.4em;text-align:right;margin-right:12px;color:var(--muted);opacity:.7}
+pre.code .ln.on{background:var(--hot-soft);border-left-color:var(--hot)}
+.t-k{color:var(--accent);font-weight:600}.t-n{color:var(--bad)}.t-f{color:var(--ok)}.t-s{color:var(--ok)}.t-c{color:var(--muted);font-style:italic}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.sll{width:100%;height:auto;display:block}
+.sll .nd rect{fill:var(--node);stroke:var(--node-line);stroke-width:2}
+.sll .nd .pp{fill:var(--node-ptr)}
+.sll .nv{font-family:var(--f-mono);font-size:25px;font-weight:600;fill:var(--ink);text-anchor:middle}
+.sll .nd.focus rect{stroke:var(--accent);stroke-width:4}
+.sll .nd.new rect{stroke:var(--ok);stroke-width:4}.sll .nd.new .dp{fill:var(--ok-soft)}
+.sll .nd.del rect{stroke:var(--bad);stroke-width:4}.sll .nd.del .dp{fill:var(--bad-soft)}
+.sll .nd.orph rect,.sll .nd.lost rect{stroke:var(--bad);stroke-dasharray:7 5;fill-opacity:.45}
+.sll .nd.orph .nv,.sll .nd.lost .nv{fill-opacity:.55}
+.sll .ar path{fill:none;stroke:var(--arrow);stroke-width:3}
+.sll .ar circle,.sll .ar polygon{fill:var(--arrow)}
+.sll .ar.hot path{stroke:var(--hot);stroke-width:5}.sll .ar.hot circle,.sll .ar.hot polygon{fill:var(--hot)}
+.sll .ar.dim{opacity:.45}
+.sll .nul{font-family:var(--f-mono);font-size:19px;font-weight:600;fill:var(--muted)}
+.sll .lb text{font-family:var(--f-mono);font-size:19px;font-weight:600;fill:var(--accent)}
+.sll .lb line{stroke:var(--accent);stroke-width:2.5}.sll .lb polygon{fill:var(--accent)}
+.sll .lb.head text{fill:var(--ink)}.sll .lb.head line{stroke:var(--ink)}.sll .lb.head polygon{fill:var(--ink)}
+.sll .lb.hot text{fill:var(--hot)}.sll .lb.hot line{stroke:var(--hot);stroke-width:4}.sll .lb.hot polygon{fill:var(--hot)}
+.sll .tg{font-family:var(--f-body);font-size:16px;font-weight:700;fill:var(--bad)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);padding:2px 4px 6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:2px solid}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 24px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{font-family:var(--f-mono);font-variant-numeric:tabular-nums;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.95rem}
+.pill b{color:var(--accent)}
+.pill.low b{color:var(--bad)}
+.progress{display:flex;gap:6px}
+.progress span{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.progress span.done{background:var(--accent)}
+.progress span.now{background:var(--hot)}
+.qmeta{display:flex;justify-content:space-between;gap:10px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.qmeta .tag{color:var(--accent);font-weight:600}
+.qcard h2{margin:8px 0 14px}
+.qcard pre.code{margin:0 0 14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:760px){.opts{grid-template-columns:1fr}}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:12px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.opt .k{flex:none;font-family:var(--f-mono);font-weight:600;width:28px;height:28px;border-radius:7px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.opt .t{min-width:0;overflow-wrap:anywhere}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}.opt.correct .k{background:var(--ok);color:var(--panel)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}.opt.wrong .k{background:var(--bad);color:var(--panel)}
+.opt:disabled{cursor:default}
+.feedback{margin-top:14px;padding:14px 16px;border-radius:10px;background:var(--hot-soft);border:1px solid var(--line)}
+.feedback strong{display:block;margin-bottom:4px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hint{font-size:.85rem;color:var(--muted)}
+.stagecap{font-size:1.05rem;font-weight:700;color:var(--ink);padding:0 4px 6px;min-height:1.6em}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">IB2 Computer Science HL · B4.1.2 · Starter</div>
+      <h1>Linked lists: welcome back</h1>
+    </div>
+    <div class="tools">
+      <span class="pill">Score <b id="score">0</b>/<span id="max">9</span></span>
+      <button class="btn" id="resetBtn">Restart</button>
+    </div>
+  </header>
+  <div class="progress" id="progress"></div>
+  <div class="stage" id="stageBox">
+    <svg class="sll" id="stage" role="img" aria-label="Linked list diagram"></svg>
+    <div class="stagecap" id="stagecap"></div>
+  </div>
+  <section class="card qcard" id="qcard" aria-live="polite"></section>
+</div>
+
+<script>
+/* SLL diagram engine: states -> geometry -> animated SVG */
+const SLL = (() => {
+  const VW = 1000, VH = 312, NW = 110, NH = 60, PW = 30, PITCH = 170, ROWY = [34, 170];
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  function chain(vals) {
+    const ids = "abcdefgh";
+    const nodes = vals.map((v, i) => ({ id: ids[i], v }));
+    const next = {};
+    nodes.forEach((n, i) => { next[n.id] = i < nodes.length - 1 ? nodes[i + 1].id : null; });
+    return { nodes, next, labels: [{ n: "head", t: nodes.length ? nodes[0].id : null }], tags: {}, hot: [], hotLabels: [] };
+  }
+
+  function cols(st) {
+    const out = {}; let c = 0;
+    st.nodes.forEach(n => {
+      const row = n.row == null ? 1 : n.row;
+      let col = n.col;
+      if (col == null) col = row === 1 ? c++ : 0;
+      else if (row === 1) c = Math.max(c, Math.floor(col) + 1);
+      out[n.id] = { row, col };
+    });
+    return out;
+  }
+  function freeze(st) { const c = cols(st); st.nodes.forEach(n => { n.row = c[n.id].row; n.col = c[n.id].col; }); }
+  function unfreeze(st) { st.nodes.forEach(n => { delete n.row; delete n.col; }); }
+
+  function geo(st) {
+    const C = cols(st), ids = Object.keys(C), G = {};
+    const head = st.labels.find(l => l.n === "head");
+    const headNull = head && head.t == null;
+    let minC = 0, maxC = 0;
+    if (ids.length) { minC = Infinity; maxC = -Infinity; ids.forEach(id => { minC = Math.min(minC, C[id].col); maxC = Math.max(maxC, C[id].col); }); }
+    const extraR = ids.some(id => C[id].col === maxC && st.next[id] === null) ? 80 : 0;
+    const extraL = headNull && ids.length ? 150 : 0;
+    const width = ids.length ? (maxC - minC) * PITCH + NW + extraR + extraL : 0;
+    const x0 = (VW - width) / 2 + extraL - minC * PITCH;
+    const P = {};
+    ids.forEach(id => { P[id] = { x: x0 + C[id].col * PITCH, y: ROWY[C[id].row], row: C[id].row }; });
+
+    st.nodes.forEach(n => { const p = P[n.id]; G["n" + n.id] = { k: "n", x: p.x, y: p.y, o: 1, c: n.cls || "", v: n.v }; });
+
+    st.nodes.forEach(n => {
+      if (!(n.id in st.next)) return;
+      const t = st.next[n.id], p = P[n.id];
+      const sx = p.x + NW - PW / 2, sy = p.y + NH / 2;
+      let ex, ey, cx, cy;
+      if (t === null) {
+        ex = p.x + NW + 36; ey = sy; cx = (sx + ex) / 2; cy = sy;
+        G["z" + n.id] = { k: "z", x: p.x + NW + 42, y: sy + 6, o: 1, a: "start" };
+      } else if (t === n.id) {
+        if (p.row === 0) { ex = p.x + NW / 2 + 14; ey = p.y + NH + 3; cx = p.x + NW + 70; cy = p.y + NH + 75; }
+        else { ex = p.x + NW / 2 + 14; ey = p.y - 3; cx = p.x + NW + 70; cy = p.y - 80; }
+      } else {
+        const q = P[t]; if (!q) return;
+        if (q.row === p.row) {
+          if (q.x > p.x) { ex = q.x - 3; ey = q.y + NH / 2; cx = (sx + ex) / 2; cy = sy - ((ex - sx) > PITCH * 1.3 ? 118 : 0); }
+          else { ex = q.x + NW / 2 - 15; ey = q.y + NH + 3; cx = (sx + ex) / 2; cy = sy + 150; }
+        } else if (q.row < p.row) { ex = q.x + NW / 2; ey = q.y + NH + 3; cx = (sx + ex) / 2; cy = (sy + ey) / 2; }
+        else { ex = q.x + NW / 2; ey = q.y - 3; cx = (sx + ex) / 2; cy = (sy + ey) / 2; }
+      }
+      const dim = n.cls === "lost" || n.cls === "orph";
+      G["a" + n.id] = { k: "a", sx, sy, cx, cy, ex, ey, o: 1, c: (st.hot || []).includes(n.id) ? "hot" : dim ? "dim" : "" };
+    });
+
+    const stack = {};
+    st.labels.forEach(l => {
+      const hot = (st.hotLabels || []).includes(l.n);
+      let g;
+      if (l.t == null) {
+        const lx = ids.length ? x0 + minC * PITCH - 130 : VW / 2 - 40;
+        g = { k: "l", tx: lx + 40, ty: 126, x1: lx + 40, y1: 134, x2: lx + 40, y2: 186, o: 1, lo: 1 };
+        G["zL" + l.n] = { k: "z", x: lx + 40, y: 210, o: 1, a: "middle" };
+      } else {
+        const p = P[l.t]; if (!p) return;
+        if (!l.below) {
+          if (p.row === 1) g = { k: "l", tx: p.x + 40, ty: p.y - 46, x1: p.x + 40, y1: p.y - 38, x2: p.x + 40, y2: p.y - 5, o: 1, lo: 1 };
+          else g = { k: "l", tx: p.x - 70, ty: p.y + NH / 2 + 6, x1: p.x - 36, y1: p.y + NH / 2, x2: p.x - 5, y2: p.y + NH / 2, o: 1, lo: 1 };
+        } else {
+          const k = stack[l.t] || 0; stack[l.t] = k + 1;
+          g = { k: "l", tx: p.x + 40, ty: p.y + NH + 46 + k * 21, x1: p.x + 40, y1: p.y + NH + 29, x2: p.x + 40, y2: p.y + NH + 5, o: 1, lo: k ? 0 : 1 };
+        }
+      }
+      g.name = l.n; g.c = hot ? "hot" : l.n === "head" ? "head" : "";
+      G["L" + l.n] = g;
+    });
+
+    Object.keys(st.tags || {}).forEach(id => {
+      const p = P[id]; if (!p) return;
+      G["t" + id] = { k: "t", x: p.x + NW / 2, y: p.y - 11, o: 1, txt: st.tags[id] };
+    });
+    return G;
+  }
+
+  function mix(A, B, t) {
+    const R = {}, keys = new Set([...Object.keys(A), ...Object.keys(B)]);
+    keys.forEach(k => {
+      const a = A[k], b = B[k];
+      if (a && b) { const r = { ...b }; for (const f in b) if (f !== "v" && typeof b[f] === "number" && typeof a[f] === "number") r[f] = a[f] + (b[f] - a[f]) * t; R[k] = r; }
+      else if (b) R[k] = { ...b, o: b.o * t };
+      else R[k] = { ...a, o: a.o * (1 - t) };
+    });
+    return R;
+  }
+
+  const f = n => Math.round(n * 10) / 10;
+  function head(x2, y2, dx, dy, s) {
+    const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const ax = x2 - ux * s * 2, ay = y2 - uy * s * 2, px = -uy * s, py = ux * s;
+    return { ax, ay, pts: `${f(x2)},${f(y2)} ${f(ax + px)},${f(ay + py)} ${f(ax - px)},${f(ay - py)}` };
+  }
+
+  function draw(G) {
+    let nodes = "", arrows = "", texts = "", labels = "";
+    for (const key in G) {
+      const e = G[key]; if (e.o < 0.02) continue;
+      const o = f(e.o);
+      if (e.k === "n") {
+        nodes += `<g class="nd ${e.c}" opacity="${o}"><rect class="dp" x="${f(e.x)}" y="${f(e.y)}" width="${NW - PW}" height="${NH}" rx="3"/><rect class="pp" x="${f(e.x + NW - PW)}" y="${f(e.y)}" width="${PW}" height="${NH}" rx="3"/><text class="nv" x="${f(e.x + (NW - PW) / 2)}" y="${f(e.y + NH / 2 + 8)}">${esc(e.v)}</text></g>`;
+      } else if (e.k === "a") {
+        const h = head(e.ex, e.ey, e.ex - e.cx || e.ex - e.sx, e.ey - e.cy || e.ey - e.sy, 5.5);
+        arrows += `<g class="ar ${e.c}" opacity="${o}"><path d="M${f(e.sx)} ${f(e.sy)} Q${f(e.cx)} ${f(e.cy)} ${f(h.ax)} ${f(h.ay)}"/><circle cx="${f(e.sx)}" cy="${f(e.sy)}" r="4.5"/><polygon points="${h.pts}"/></g>`;
+      } else if (e.k === "z") {
+        texts += `<text class="nul" x="${f(e.x)}" y="${f(e.y)}" text-anchor="${e.a}" opacity="${o}">None</text>`;
+      } else if (e.k === "l") {
+        const h = head(e.x2, e.y2, e.x2 - e.x1, e.y2 - e.y1, 5);
+        labels += `<g class="lb ${e.c}" opacity="${o}"><text x="${f(e.tx)}" y="${f(e.ty)}" text-anchor="middle">${esc(e.name)}</text><g opacity="${f(e.lo)}"><line x1="${f(e.x1)}" y1="${f(e.y1)}" x2="${f(h.ax)}" y2="${f(h.ay)}"/><polygon points="${h.pts}"/></g></g>`;
+      } else if (e.k === "t") {
+        texts += `<text class="tg" x="${f(e.x)}" y="${f(e.y)}" text-anchor="middle" opacity="${o}">${esc(e.txt)}</text>`;
+      }
+    }
+    return nodes + arrows + texts + labels;
+  }
+
+  function Stage(svg) {
+    let drawn = {}, raf = null;
+    svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`);
+    const reduce = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return {
+      go(st, anim = true) {
+        const to = geo(st), from = drawn;
+        cancelAnimationFrame(raf);
+        if (!anim || reduce() || !Object.keys(from).length) { drawn = to; svg.innerHTML = draw(to); return; }
+        const t0 = performance.now(), D = 800;
+        const step = now => {
+          const t = Math.min(1, (now - t0) / D);
+          const e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          drawn = mix(from, to, e); svg.innerHTML = draw(drawn);
+          if (t < 1) raf = requestAnimationFrame(step); else drawn = to;
+        };
+        raf = requestAnimationFrame(step);
+      }
+    };
+  }
+
+  /* sequence building helpers */
+  function build(start, defs) {
+    let s = clone(start);
+    return defs.map(d => {
+      s = clone(s); s.hot = []; s.hotLabels = [];
+      s.nodes.forEach(n => { if (n.cls === "focus") n.cls = ""; });
+      if (d.f) d.f(s);
+      return { l: d.l || [], c: d.c, st: clone(s) };
+    });
+  }
+  const nd = (s, id) => s.nodes.find(n => n.id === id);
+  const lab = (s, n, t, below = true) => { const L = s.labels.find(l => l.n === n); if (L) L.t = t; else s.labels.push({ n, t, below }); };
+  const unlab = (s, n) => { s.labels = s.labels.filter(l => l.n !== n); };
+  const set = (s, id, p) => Object.assign(nd(s, id), p);
+  const orphan = (s, id) => { freeze(s); set(s, id, { row: 0, cls: "orph" }); s.tags[id] = "orphaned"; };
+  const remove = (s, id) => { s.nodes = s.nodes.filter(n => n.id !== id); delete s.next[id]; delete s.tags[id]; s.labels = s.labels.filter(l => l.t !== id || l.n === "head"); unfreeze(s); };
+
+  function hlPy(line) {
+    return esc(line).replace(/("[^"]*")|(#.*$)|\b(def|class|if|while|return|and|not|is|del|print|elif|else)\b|\b(None|True|False)\b|\b(self)\b/g,
+      (m, a, b, c, d, e) => a ? `<span class="t-s">${a}</span>` : b ? `<span class="t-c">${b}</span>` : c ? `<span class="t-k">${c}</span>` : d ? `<span class="t-n">${d}</span>` : `<span class="t-f">${e}</span>`);
+  }
+
+  return { chain, clone, freeze, unfreeze, Stage, build, nd, lab, unlab, set, orphan, remove, hlPy, esc };
+})();
+
+const S = SLL;
+const stage = S.Stage(document.getElementById("stage"));
+const base = v => S.chain(v);
+const mod = (st, f) => { const s = S.clone(st); f(s); return s; };
+
+const scattered = mod(base([10, 20, 30]), s => { s.nodes[0].row = 1; s.nodes[0].col = 0; s.nodes[1].row = 0; s.nodes[1].col = 1.2; s.nodes[2].row = 1; s.nodes[2].col = 2.4; });
+const oneNode = mod(base([42]), s => { s.tags.a = "data      next"; s.next.a = null; });
+const empty = base([]);
+const trav = mod(base([5, 10, 15]), s => S.lab(s, "current", "a"));
+const travEnd = mod(base([5, 10, 15]), s => S.lab(s, "current", "c"));
+const headBefore = mod(base([10, 20]), s => { s.nodes.unshift({ id: "n", v: 5, row: 0, col: 0, cls: "new" }); s.next.n = null; s.nodes[1].col = 0; s.nodes[1].row = 1; });
+const headAfter = mod(base([10, 20]), s => { s.nodes.unshift({ id: "n", v: 5, cls: "new" }); s.next.n = "a"; S.lab(s, "head", "n"); s.hot = ["n"]; s.hotLabels = ["head"]; });
+const tailBefore = mod(base([5, 10, 15]), s => { S.lab(s, "current", "c"); s.nodes.push({ id: "n", v: 30, row: 0, col: 3, cls: "new" }); s.next.n = null; s.nodes[2].cls = "focus"; });
+const tailAfter = mod(base([5, 10, 15]), s => { s.nodes.push({ id: "n", v: 30, cls: "new" }); s.next.c = "n"; s.next.n = null; s.hot = ["c"]; });
+const circular = mod(base([10, 20, 30]), s => { s.next.c = "a"; s.hot = ["c"]; });
+const bridge = mod(base([5, 10, 15, 30]), s => { s.nodes.push({ id: "e", v: 25, row: 0, col: 2.5, cls: "new" }); s.next.e = null; });
+const bridgeSeq = S.build(bridge, [
+  { c: "node_before starts at the head (5).", f: s => { S.lab(s, "node_before", "a"); S.set(s, "a", { cls: "focus" }); } },
+  { c: "5 isn't 15, so node_before moves on to 10.", f: s => { S.lab(s, "node_before", "b"); S.set(s, "b", { cls: "focus" }); } },
+  { c: "node_before stops at 15: the node before the insertion point.", f: s => { S.lab(s, "node_before", "c"); S.set(s, "c", { cls: "focus" }); } },
+  { c: "First: new_node.next = node_before.next. 25 now points to 30, so the rest of the list is safe.", f: s => { s.next.e = "d"; s.hot = ["e"]; S.set(s, "c", { cls: "focus" }); } },
+  { c: "Then: node_before.next = new_node. 15 now points to 25.", f: s => { s.next.c = "e"; s.hot = ["c"]; S.set(s, "c", { cls: "focus" }); } },
+  { c: "Done: 5 → 10 → 15 → 25 → 30. Only two pointers changed.", f: s => { const e = S.nd(s, "e"); delete e.row; delete e.col; e.cls = ""; s.nodes = ["a", "b", "c", "e", "d"].map(id => S.nd(s, id)); S.unlab(s, "node_before"); } },
+]);
+
+const Q = [
+  { tag: "Memory", q: "How are the nodes of a linked list stored in memory?",
+    opts: ["In one contiguous block, like an array", "Anywhere in memory, joined by pointers", "In order of their data values", "In a fixed-size table created at the start"], a: 1,
+    st: scattered, hide: true, cap: "Nodes can sit anywhere in memory. The pointers hold the order.",
+    why: "Each node is allocated separately and can be anywhere in memory. The order comes from the pointers, not from where the nodes are stored." },
+  { tag: "Nodes", q: "What does each node in a singly linked list contain?",
+    opts: ["Only the data", "The data and a pointer to the next node", "The data, a pointer to the next node and a pointer to the previous node", "The data and its index position"], a: 1,
+    st: oneNode, hide: true, cap: "A single SLL node: the data, then the next pointer.",
+    why: "An SLL node has two parts: the data and a next pointer. A pointer to the previous node as well is what makes a list doubly linked." },
+  { tag: "Empty list", code: "my_list = LinkedList()", q: "What is the value of head in a newly created, empty list?",
+    opts: ["0", "None (NULL)", "A pointer to itself", "The index of the first node"], a: 1,
+    st: empty, hide: true, cap: "An empty list: head is None.",
+    why: "An empty list has no nodes, so head points to nothing. In Python that is None; the slides call it NULL." },
+  { tag: "Traversal", code: "current = self.head\nwhile ____________:\n    print(current.data)\n    current = current.next",
+    q: "Which condition prints every value in the list?",
+    opts: ["current is not None", "current.next is not None", "self.head is not None", "current.data != 0"], a: 0,
+    st: trav, cap: "current starts at head.",
+    why: "The loop has to keep going until current moves past the last node and becomes None. current.next is not None stops one node early, so 15 is never printed." },
+  { tag: "Traversal", q: "Using the correct loop, how many times does current = current.next run for the list 5 → 10 → 15?",
+    opts: ["2", "3", "4", "1"], a: 1,
+    st: trav, after: travEnd, cap: "Count the moves.",
+    why: "current moves 5 → 10, then 10 → 15, then 15 → None. That is 3 moves. The loop then stops because current is None." },
+  { tag: "Insert at head", q: "To insert 5 at the head of 10 → 20, which order of steps is correct?",
+    opts: ["new_node.next = self.head, then self.head = new_node", "self.head = new_node, then new_node.next = self.head", "self.head.next = new_node", "Traverse to the last node, then link the new node"], a: 0,
+    st: headBefore, after: headAfter, cap: "The new node 5 is ready to insert.",
+    why: "Link the new node to the current head first. If you move head first, you lose the only reference to 10, and the new node ends up pointing at itself." },
+  { tag: "Insert at tail", q: "Why do we traverse the whole list to insert at the tail of this SLL?",
+    opts: ["We only store head, so we must follow pointers to find the node whose next is None", "The nodes must stay in sorted order", "The other nodes have to be shifted along, like in an array", "The new node needs to know its index"], a: 0,
+    st: tailBefore, after: tailAfter, cap: "current has reached the last node.",
+    why: "The list only keeps a pointer to the head. To find the last node, you follow the pointers until you reach the node whose next is None. That makes inserting at the tail O(n)." },
+  { tag: "Arrays vs lists", q: "You need to add an item to the start of a collection of 10,000 items. Why is a linked list better than an array for this?",
+    opts: ["Only two pointers change, so it is O(1)", "Linked lists use less memory per item", "You can jump straight to any node by its index", "The array would have to be sorted first"], a: 0,
+    st: base([10, 20, 30]), cap: "A linked list.",
+    why: "Inserting at the head only changes two pointers. An array has to shift all 10,000 elements along by one, which is O(n). Linked lists actually use more memory per item, because every node also stores a pointer." },
+  { tag: "Types of list", q: "In a circular singly linked list, what does the last node's next pointer point to?",
+    opts: ["None", "The previous node", "The head node", "Itself"], a: 2,
+    st: base([10, 20, 30]), after: circular, hide: true, cap: "In a circular list, the tail points back to the head.",
+    why: "Instead of None, the tail points back to the head, so you can keep going round the list." },
+];
+const TEASER = {
+  q: "We want to insert 25 between 15 and 30. Which node's pointer has to change, and what must you do first so you don't lose the rest of the list?",
+  a: "You need a pointer to the node <b>before</b> the insertion point: 15. First set the new node's <code>next</code> to 15's <code>next</code> (30). Only then point 15 at the new node. Do it the other way round and nothing points to 30 any more, so the rest of the list is lost."
+};
+
+let i = 0, score = 0, answered = false;
+const $ = id => document.getElementById(id);
+const L = "ABCD";
+
+function progress() { $("progress").innerHTML = [...Q, TEASER].map((_, k) => `<span class="${k < i ? "done" : k === i ? "now" : ""}"></span>`).join(""); }
+function codeBlock(src) { return `<pre class="code">${src.split("\n").map((l, n) => `<span class="ln" data-n="${n + 1}">${S.hlPy(l)}</span>`).join("")}</pre>`; }
+
+function render() {
+  answered = false; progress();
+  if (i >= Q.length) return teaser();
+  const q = Q[i];
+  $("stageBox").hidden = !!q.hide;
+  if (!q.hide) { stage.go(q.st); $("stagecap").textContent = q.cap; }
+  $("qcard").innerHTML = `
+    <div class="qmeta"><span>Question ${i + 1} of ${Q.length}</span><span class="tag">${q.tag}</span></div>
+    <h2>${q.q}</h2>
+    ${q.code ? codeBlock(q.code) : ""}
+    <div class="opts">${q.opts.map((o, k) => `<button class="opt" id="opt${k}" data-k="${k}"><span class="k">${L[k]}</span><span class="t">${S.esc(o)}</span></button>`).join("")}</div>
+    <div id="fb"></div>
+    <div class="nav"><span class="hint">Keys: A–D to answer, Enter for next</span><button class="btn primary" id="next" hidden>Next →</button></div>`;
+  document.querySelectorAll(".opt").forEach(b => b.onclick = () => answer(+b.dataset.k));
+  $("next").onclick = () => { i++; render(); };
+}
+function answer(k) {
+  if (answered) return; answered = true;
+  const q = Q[i], right = k === q.a;
+  if (right) $("score").textContent = ++score;
+  document.querySelectorAll(".opt").forEach((b, n) => { b.disabled = true; if (n === q.a) b.classList.add("correct"); else if (n === k) b.classList.add("wrong"); });
+  $("fb").innerHTML = `<div class="feedback"><strong>${right ? "Correct." : "Not quite. The answer is " + L[q.a] + "."}</strong>${q.why}</div>`;
+  if (q.hide) {
+    stage.go(q.st, false); $("stagecap").textContent = q.cap; $("stageBox").hidden = false;
+    if (q.after) setTimeout(() => stage.go(q.after), 400);
+  } else if (q.after) { stage.go(q.after); $("stagecap").textContent = "After"; }
+  const n = $("next"); n.hidden = false; n.textContent = i === Q.length - 1 ? "Final question →" : "Next →"; n.focus();
+}
+let anim = null;
+function playBridge() {
+  clearTimeout(anim); let k = 0;
+  stage.go(bridge); $("stagecap").textContent = "Watch the pointers.";
+  const nextStep = () => {
+    if (k >= bridgeSeq.length) { $("replay").hidden = false; return; }
+    stage.go(bridgeSeq[k].st); $("stagecap").textContent = bridgeSeq[k].c; k++;
+    anim = setTimeout(nextStep, 2400);
+  };
+  $("replay").hidden = true;
+  anim = setTimeout(nextStep, 900);
+}
+function teaser() {
+  $("stageBox").hidden = false;
+  stage.go(bridge); $("stagecap").textContent = "5 → 10 → 15 → 30, with the new node 25 waiting above.";
+  $("qcard").innerHTML = `
+    <div class="qmeta"><span>Think · Pair · Share</span><span class="tag">Today's lesson</span></div>
+    <h2>${TEASER.q}</h2>
+    <p>Sketch it on paper with a partner for one minute, then reveal.</p>
+    <div class="nav"><span class="hint">You scored ${score} out of ${Q.length}.</span><button class="btn primary" id="reveal">Reveal</button></div>
+    <div id="rev" hidden><div class="feedback"><strong>Find the node before, then link in the right order.</strong>${TEASER.a}</div>
+    <div class="nav"><span></span><button class="btn" id="replay" hidden>Replay animation</button></div></div>`;
+  $("reveal").onclick = () => { $("rev").hidden = false; $("reveal").hidden = true; playBridge(); };
+  $("replay").onclick = playBridge;
+}
+function reset() { clearTimeout(anim); i = 0; score = 0; $("score").textContent = 0; render(); }
+
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = "abcd".indexOf(e.key.toLowerCase());
+  if (k > -1 && i < Q.length && !answered) answer(k);
+  else if (e.key === "Enter" && answered && document.activeElement !== $("next")) $("next").click();
+});
+
+$("resetBtn").onclick = reset;
+$("max").textContent = Q.length;
+reset();
+</script>
+
+</body>
+</html>

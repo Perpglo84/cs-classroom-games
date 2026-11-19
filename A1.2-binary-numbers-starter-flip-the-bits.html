@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flip the Bits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1a1e; --panel:#13262b; --panel2:#1a3238; --ink:#e9f2f0; --muted:#8fa6ab;
+    --bin:#2fc79a; --dec:#5fa4f0; --hex:#f4b13d; --warn:#ff6b78; --bulb:#ffd34d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+  body{display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden}
+  button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+
+  header{display:flex;align-items:center;gap:1.2vw;padding:1.4vh 2.2vw;flex-wrap:wrap}
+  h1{margin:0;font-size:clamp(22px,2.6vw,46px);letter-spacing:.5px}
+  h1 span{color:var(--bulb)}
+  .tabs{display:flex;gap:.5vw;margin-left:auto;background:var(--panel);padding:5px;border-radius:999px}
+  .tab{background:none;border:0;color:var(--muted);font-size:clamp(14px,1.25vw,22px);font-weight:700;padding:.7vh 1.4vw;border-radius:999px}
+  .tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+  /* prompt banner */
+  #banner{margin:0 2.2vw;background:var(--panel);border-radius:18px;padding:1.6vh 1.8vw;display:flex;align-items:center;gap:1.4vw;min-height:12vh}
+  #bannerMain{flex:1;min-width:0}
+  #step{font-size:clamp(12px,1vw,18px);color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+  #prompt{font-size:clamp(22px,2.6vw,48px);font-weight:700;line-height:1.15;margin-top:.3vh}
+  #prompt b{color:var(--bulb)}
+  #question{font-size:clamp(16px,1.6vw,28px);color:var(--ink);margin-top:.8vh;display:none}
+  #question.show{display:block}
+  #reveal{font-size:clamp(16px,1.5vw,26px);color:var(--bin);margin-top:.6vh;display:none;font-weight:700}
+  #reveal.show{display:block}
+  .bbtn{background:var(--panel2);border:2px solid #2b4a52;color:var(--ink);font-size:clamp(14px,1.25vw,22px);font-weight:700;padding:1.1vh 1.4vw;border-radius:14px;white-space:nowrap}
+  .bbtn:active{transform:scale(.97)}
+  .bbtn.primary{background:var(--bulb);color:#2a2100;border-color:var(--bulb)}
+  .bbtn[hidden]{display:none}
+  #status{font-size:clamp(18px,1.8vw,32px);font-weight:700;color:var(--bin);white-space:nowrap}
+
+  /* bulbs */
+  #board{flex:1;display:flex;flex-direction:column;justify-content:center;padding:1vh 2.2vw}
+  #bulbs{display:grid;grid-template-columns:repeat(8,1fr);gap:1.1vw}
+  .col{display:flex;flex-direction:column;align-items:center;position:relative}
+  .pv{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(20px,2.6vw,52px);color:var(--ink)}
+  .pow{font-size:clamp(12px,1vw,18px);color:var(--muted);height:1.4em;visibility:hidden}
+  .showPow .pow{visibility:visible}
+  .bulb{background:none;border:0;padding:0;width:100%;max-width:150px;aspect-ratio:3/4;position:relative}
+  .bulb svg{width:100%;height:100%;overflow:visible}
+  .glass{fill:#22393f;stroke:#3b5a62;stroke-width:3;transition:fill .15s}
+  .filament{stroke:#55717a;stroke-width:3;fill:none;transition:stroke .15s}
+  .base{fill:#56676c}
+  .halo{fill:var(--bulb);opacity:0;transition:opacity .15s}
+  .on .glass{fill:var(--bulb);stroke:#fff3b8}
+  .on .filament{stroke:#a76b00}
+  .on .halo{opacity:.35}
+  .bulb:focus-visible{outline:3px solid var(--dec);outline-offset:6px;border-radius:12px}
+  .bit{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(26px,3.4vw,66px);color:#4e676d;line-height:1.1;transition:color .15s}
+  .col.isOn .bit{color:var(--bin)}
+  .tag{font-size:clamp(12px,1.05vw,20px);font-weight:700;color:var(--warn);height:1.5em;visibility:hidden;text-align:center}
+  .showTags .tag.has{visibility:visible}
+  .nib{position:absolute;bottom:-1.1vh;height:6px;border-radius:3px;background:var(--hex);opacity:0;transition:opacity .2s}
+  .showHex .nib{opacity:.9}
+  .flash .on .glass{animation:pulse .5s 3}
+  @keyframes pulse{50%{fill:#fff}}
+
+  /* readouts */
+  #readouts{display:flex;gap:1.2vw;margin:2.2vh 2.2vw 0}
+  .ro{flex:1;background:var(--panel);border-radius:18px;padding:1.2vh 1.4vw;display:flex;align-items:baseline;gap:1vw;min-width:0}
+  .ro .lab{font-size:clamp(13px,1.1vw,20px);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+  .ro .val{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:clamp(28px,3.6vw,70px);line-height:1;white-space:nowrap}
+  .ro sub{font-size:.4em;color:var(--muted)}
+  #roBin .lab,#roBin .val{color:var(--bin)}
+  #roDec .lab,#roDec .val{color:var(--dec)}
+  #roHex .lab,#roHex .val{color:var(--hex)}
+  #roHex[hidden]{display:none}
+  #roDec .val.hiddenVal{color:transparent;text-shadow:none;position:relative}
+  #roDec .val.hiddenVal sub{visibility:hidden}
+  #roDec .val.hiddenVal::after{content:"?";color:var(--dec);position:absolute;left:0}
+  #roDec{cursor:pointer}
+
+  /* controls */
+  footer{display:flex;gap:.8vw;padding:1.8vh 2.2vw 2vh;flex-wrap:wrap;align-items:center}
+  .tog{background:var(--panel);border:2px solid #2b4a52;color:var(--muted);font-size:clamp(13px,1.1vw,20px);font-weight:700;padding:1vh 1.1vw;border-radius:12px}
+  .tog[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--panel2)}
+  .spacer{flex:1}
+  select.tog{appearance:none}
+  #score{font-size:clamp(14px,1.3vw,24px);color:var(--muted);font-weight:700}
+  #score b{color:var(--ink)}
+
+  /* confetti */
+  .confetti{position:fixed;top:-20px;width:12px;height:18px;border-radius:2px;pointer-events:none;z-index:9;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Flip the <span>Bits</span></h1>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-mode="challenge" aria-selected="true">Challenges</button>
+    <button class="tab" role="tab" data-mode="target" aria-selected="false">Make it</button>
+    <button class="tab" role="tab" data-mode="read" aria-selected="false">Read it</button>
+    <button class="tab" role="tab" data-mode="free" aria-selected="false">Free play</button>
+  </div>
+</header>
+
+<section id="banner" aria-live="polite">
+  <div id="bannerMain">
+    <div id="step"></div>
+    <div id="prompt"></div>
+    <div id="question"></div>
+    <div id="reveal"></div>
+  </div>
+  <div id="status"></div>
+  <button class="bbtn" id="btnPrev">◀ Back</button>
+  <button class="bbtn" id="btnReveal">Reveal</button>
+  <button class="bbtn primary" id="btnNext">Next ▶</button>
+</section>
+
+<main id="board">
+  <div id="bulbs"></div>
+</main>
+
+<section id="readouts">
+  <div class="ro" id="roBin"><span class="lab">Binary</span><span class="val" id="vBin">00000000</span></div>
+  <div class="ro" id="roDec" title="Tap to show or hide"><span class="lab">Decimal</span><span class="val" id="vDec">0</span></div>
+  <div class="ro" id="roHex" hidden><span class="lab">Hex</span><span class="val" id="vHex">00</span></div>
+</section>
+
+<footer>
+  <button class="tog" id="btnReset">↺ All off</button>
+  <button class="tog" id="tHide" aria-pressed="false">Hide decimal</button>
+  <button class="tog" id="tTags" aria-pressed="false">MSB / LSB</button>
+  <button class="tog" id="tPow" aria-pressed="false">Powers of 2</button>
+  <button class="tog" id="tHex" aria-pressed="false">Hex</button>
+  <span class="spacer"></span>
+  <span id="score"></span>
+  <select class="tog" id="level" aria-label="Difficulty">
+    <option value="31">Easy (up to 31)</option>
+    <option value="127">Medium (up to 127)</option>
+    <option value="255" selected>Hard (up to 255)</option>
+  </select>
+  <button class="tog" id="tSound" aria-pressed="true">Sound on</button>
+  <button class="tog" id="btnFull">⛶ Full screen</button>
+</footer>
+
+<script>
+const PV = [128, 64, 32, 16, 8, 4, 2, 1];
+let bits = Array(8).fill(0);
+let mode = "challenge", ci = 0, solved = false, locked = false;
+let target = null, score = 0, streak = 0, tries = 0;
+const $ = (id) => document.getElementById(id);
+
+// ---------- challenges ----------
+const CH = [
+  { prompt: "Turn on <b>one</b> bulb to make <b>1</b>", targets: [1],
+    q: "Which bulb did you use? Where is it?", a: "The rightmost bulb: the least significant bit (LSB). It has the smallest value.", show: { tags: true } },
+  { prompt: "Using <b>one bulb each time</b>, make <b>2</b>, then <b>4</b>, then <b>8</b>", targets: [2, 4, 8], one: true,
+    q: "Look at the numbers above the bulbs. What do you notice?", a: "Each place value is double the one to its right. Binary is base 2.", show: { pow: true } },
+  { prompt: "Make <b>3</b>", targets: [3],
+    q: "You can't make 3 with one bulb. How did you do it?", a: "Add place values together: 2 + 1 = 3.", },
+  { prompt: "Make <b>128</b> using one bulb", targets: [128], one: true,
+    q: "This bulb is worth the most. What do you think it's called?", a: "The most significant bit (MSB): the leftmost bit, with the largest place value.", show: { tags: true } },
+  { prompt: "Make the <b>biggest</b> number you can", targets: [255],
+    q: "A byte has 256 possible values. So why is the biggest number not 256?", a: "Because 0 is one of the values. 8 bits store 0 to 255." },
+  { prompt: "Make any <b>odd</b> number", odd: true,
+    q: "Which bulb is ALWAYS on for an odd number? Why?", a: "The 1 bulb (LSB). Every other place value is even, so only the 1 can make a number odd." },
+  { prompt: "Make <b>37</b>", targets: [37],
+    q: "Which bulb did you turn on first? Why start from the left?", a: "Start with the biggest value that fits: 32. Then 37 − 32 = 5, which is 4 + 1." },
+  { prompt: "Make <b>50</b>, then make <b>100</b>", targets: [50, 100],
+    q: "Compare the two patterns. What happened to the bulbs?", a: "Every bit moved one place to the left. Shifting left doubles the number." },
+  { prompt: "Make <b>255</b> again, and look at the hex", targets: [255], show: { hex: true },
+    q: "Hex shows FF. Remember #FF5733? How many bulbs does ONE hex digit match?", a: "4 bulbs = 1 nibble = 1 hex digit. FF means 1111 1111 = 255." },
+];
+let sub = 0; // index inside a multi-target challenge
+
+// ---------- build bulbs ----------
+const bulbsEl = $("bulbs");
+PV.forEach((v, i) => {
+  const col = document.createElement("div");
+  col.className = "col";
+  const pw = 7 - i;
+  col.innerHTML = `
+    <div class="pv">${v}</div>
+    <div class="pow">2<sup>${pw}</sup></div>
+    <button class="bulb" aria-pressed="false" aria-label="Bulb worth ${v}">
+      <svg viewBox="0 0 120 160" aria-hidden="true">
+        <circle class="halo" cx="60" cy="58" r="60"/>
+        <path class="glass" d="M60 8c-27 0-46 20-46 46 0 18 9 29 18 39 6 7 9 13 9 21h38c0-8 3-14 9-21 9-10 18-21 18-39C106 28 87 8 60 8z"/>
+        <path class="filament" d="M46 112V82l7-14 7 14 7-14 7 14v30"/>
+        <rect class="base" x="40" y="116" width="40" height="10" rx="3"/>
+        <rect class="base" x="42" y="129" width="36" height="9" rx="3"/>
+        <rect class="base" x="48" y="141" width="24" height="10" rx="5"/>
+      </svg>
+    </button>
+    <div class="bit">0</div>
+    <div class="tag ${i === 0 || i === 7 ? "has" : ""}">${i === 0 ? "MSB" : i === 7 ? "LSB" : ""}</div>`;
+  if (i === 0 || i === 4) { const n = document.createElement("div"); n.className = "nib"; col.appendChild(n); }
+  col.querySelector(".bulb").addEventListener("click", () => flip(i));
+  bulbsEl.appendChild(col);
+});
+function sizeNibbles() {
+  const cols = bulbsEl.querySelectorAll(".col");
+  [0, 4].forEach((s) => {
+    const a = cols[s].getBoundingClientRect(), b = cols[s + 3].getBoundingClientRect();
+    const n = cols[s].querySelector(".nib");
+    n.style.left = "0px"; n.style.width = (b.right - a.left) + "px";
+  });
+}
+addEventListener("resize", sizeNibbles);
+
+// ---------- sound ----------
+let ac = null, soundOn = true;
+function beep(freq, dur = 0.08, type = "sine", when = 0) {
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, ac.currentTime + when);
+    g.gain.exponentialRampToValueAtTime(0.18, ac.currentTime + when + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + when + dur);
+    o.connect(g).connect(ac.destination); o.start(ac.currentTime + when); o.stop(ac.currentTime + when + dur + 0.02);
+  } catch (e) {}
+}
+const chord = () => [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.22, "triangle", i * 0.09));
+
+// ---------- core ----------
+const value = () => bits.reduce((s, b, i) => s + b * PV[i], 0);
+function render() {
+  const cols = bulbsEl.querySelectorAll(".col");
+  bits.forEach((b, i) => {
+    cols[i].classList.toggle("isOn", !!b);
+    const btn = cols[i].querySelector(".bulb");
+    btn.classList.toggle("on", !!b); btn.setAttribute("aria-pressed", b ? "true" : "false");
+    cols[i].querySelector(".bit").textContent = b;
+  });
+  const v = value(), s = bits.join("");
+  $("vBin").innerHTML = s.slice(0, 4) + " " + s.slice(4) + "<sub>2</sub>";
+  $("vDec").innerHTML = v + "<sub>10</sub>";
+  $("vHex").innerHTML = v.toString(16).toUpperCase().padStart(2, "0") + "<sub>16</sub>";
+}
+function flip(i) {
+  if (locked) return;
+  bits[i] ^= 1; beep(bits[i] ? 880 : 440, 0.06, "square");
+  render(); check();
+}
+function setBits(arr) { bits = arr.slice(); render(); }
+function clearBits() { setBits(Array(8).fill(0)); }
+
+// ---------- toggles ----------
+function setTog(id, on) {
+  const el = $(id); el.setAttribute("aria-pressed", on ? "true" : "false");
+  if (id === "tHide") $("vDec").classList.toggle("hiddenVal", on);
+  if (id === "tTags") bulbsEl.classList.toggle("showTags", on);
+  if (id === "tPow") bulbsEl.classList.toggle("showPow", on);
+  if (id === "tHex") { $("roHex").hidden = !on; bulbsEl.classList.toggle("showHex", on); sizeNibbles(); }
+  if (id === "tSound") { soundOn = on; el.textContent = on ? "Sound on" : "Sound off"; }
+}
+["tHide", "tTags", "tPow", "tHex", "tSound"].forEach((id) =>
+  $(id).addEventListener("click", () => setTog(id, $(id).getAttribute("aria-pressed") !== "true")));
+$("roDec").addEventListener("click", () => setTog("tHide", $("tHide").getAttribute("aria-pressed") !== "true"));
+$("btnReset").addEventListener("click", () => { clearBits(); beep(330); if (mode === "challenge") { solved = false; showStatus(""); } });
+$("btnFull").addEventListener("click", async () => {
+  try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch (e) {}
+});
+
+// ---------- feedback ----------
+function showStatus(t, col) { $("status").textContent = t; $("status").style.color = col || "var(--bin)"; }
+function celebrate() {
+  chord();
+  bulbsEl.classList.add("flash"); setTimeout(() => bulbsEl.classList.remove("flash"), 1600);
+  const cols = ["#ffd34d", "#2fc79a", "#5fa4f0", "#f4b13d", "#ff6b78"];
+  for (let k = 0; k < 60; k++) {
+    const c = document.createElement("div"); c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw"; c.style.background = cols[k % cols.length];
+    c.style.animationDuration = 1.6 + Math.random() * 1.6 + "s"; c.style.animationDelay = Math.random() * 0.3 + "s";
+    document.body.appendChild(c); setTimeout(() => c.remove(), 3600);
+  }
+}
+
+// ---------- modes ----------
+function check() {
+  const v = value(), on = bits.reduce((a, b) => a + b, 0);
+  if (mode === "challenge") {
+    const c = CH[ci];
+    if (solved) return;
+    if (c.odd) { if (v % 2 === 1) win("✓ " + v + " is odd!"); return; }
+    const t = c.targets[sub];
+    if (v === t) {
+      if (c.one && on !== 1) { showStatus("Only ONE bulb!", "var(--warn)"); return; }
+      if (sub < c.targets.length - 1) {
+        sub++; beep(988, 0.12, "triangle");
+        showStatus("✓ " + t + ". Now make " + c.targets[sub]);
+      } else win("✓ Nailed it!");
+    } else if (c.targets.length > 1 && sub > 0) {
+      showStatus("Now make " + c.targets[sub], "var(--muted)");
+    } else showStatus("");
+  }
+  if (mode === "target" && target !== null && v === target) {
+    score++; streak++; locked = true;
+    showStatus("✓ " + target + " = " + bits.join("")); updateScore(); celebrate();
+    setTimeout(() => { locked = false; }, 600);
+    $("btnNext").textContent = "New number ▶";
+  }
+}
+function win(msg) {
+  solved = true; showStatus(msg); celebrate();
+  $("question").classList.add("show");
+  $("btnReveal").hidden = false;
+}
+function updateScore() { $("score").innerHTML = mode === "target" ? `Score <b>${score}</b> · Streak <b>${streak}</b>` : ""; }
+
+function loadChallenge(i) {
+  ci = Math.max(0, Math.min(CH.length - 1, i)); sub = 0; solved = false;
+  const c = CH[ci];
+  clearBits(); showStatus("");
+  $("step").textContent = `Challenge ${ci + 1} of ${CH.length}`;
+  $("prompt").innerHTML = c.prompt;
+  $("question").textContent = "💬 " + c.q; $("question").classList.remove("show");
+  $("reveal").textContent = c.a; $("reveal").classList.remove("show");
+  $("btnReveal").hidden = true; $("btnReveal").textContent = "Reveal";
+  $("btnPrev").hidden = ci === 0;
+  $("btnNext").hidden = false;
+  $("btnNext").textContent = ci === CH.length - 1 ? "Finish ✓" : "Next ▶";
+  if (c.show) {
+    if (c.show.tags) setTog("tTags", false);
+    if (c.show.pow) setTog("tPow", false);
+    if (c.show.hex) setTog("tHex", true);
+  }
+}
+function revealAnswer() {
+  const c = CH[ci];
+  $("reveal").classList.add("show"); $("btnReveal").hidden = true;
+  if (c.show && c.show.tags) setTog("tTags", true);
+  if (c.show && c.show.pow) setTog("tPow", true);
+}
+
+function newTarget() {
+  const max = +$("level").value;
+  let t; do { t = 1 + Math.floor(Math.random() * max); } while (t === target);
+  target = t; clearBits(); showStatus("");
+  $("step").textContent = "Make it";
+  $("prompt").innerHTML = `Make <b>${t}</b>!`;
+  $("question").classList.remove("show"); $("reveal").classList.remove("show");
+  $("btnNext").textContent = "Skip ▶";
+}
+function newRead() {
+  const max = +$("level").value;
+  let t; do { t = 1 + Math.floor(Math.random() * max); } while (t === target);
+  target = t;
+  setBits(t.toString(2).padStart(8, "0").split("").map(Number));
+  setTog("tHide", true); showStatus("");
+  $("step").textContent = "Read it";
+  $("prompt").innerHTML = "What number is this in <b>decimal</b>?";
+  $("reveal").textContent = `${t.toString(2).padStart(8, "0").split("").map((b, i) => b === "1" ? PV[i] : null).filter(Boolean).join(" + ")} = ${t}`;
+  $("reveal").classList.remove("show"); $("question").classList.remove("show");
+  $("btnReveal").hidden = false; $("btnReveal").textContent = "Reveal answer";
+  $("btnNext").textContent = "Next ▶";
+}
+
+function setMode(m) {
+  mode = m; locked = false;
+  document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", t.dataset.mode === m ? "true" : "false"));
+  $("level").style.display = m === "target" || m === "read" ? "" : "none";
+  $("btnPrev").hidden = true; $("btnReveal").hidden = true; $("btnNext").hidden = false;
+  $("banner").style.display = "";
+  setTog("tHide", false); setTog("tHex", false);
+  if (m === "challenge") loadChallenge(ci);
+  if (m === "target") { streak = 0; newTarget(); }
+  if (m === "read") { streak = 0; newRead(); }
+  if (m === "free") {
+    clearBits(); showStatus("");
+    $("step").textContent = "Free play";
+    $("prompt").innerHTML = "Tap the bulbs. What numbers can you make?";
+    $("question").classList.remove("show"); $("reveal").classList.remove("show");
+    $("btnNext").hidden = true;
+  }
+  updateScore();
+}
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => setMode(t.dataset.mode)));
+
+$("btnNext").addEventListener("click", () => {
+  if (mode === "challenge") {
+    if (ci === CH.length - 1) { $("step").textContent = "All challenges done"; $("prompt").innerHTML = "🎉 Now try <b>Make it</b> mode"; $("btnNext").hidden = true; $("btnReveal").hidden = true; $("question").classList.remove("show"); $("reveal").classList.remove("show"); showStatus(""); celebrate(); return; }
+    loadChallenge(ci + 1);
+  }
+  if (mode === "target") { if (value() !== target) streak = 0; updateScore(); newTarget(); }
+  if (mode === "read") newRead();
+});
+$("btnPrev").addEventListener("click", () => loadChallenge(ci - 1));
+$("btnReveal").addEventListener("click", () => {
+  if (mode === "challenge") revealAnswer();
+  if (mode === "read") {
+    $("reveal").classList.add("show"); setTog("tHide", false); $("btnReveal").hidden = true; chord();
+  }
+});
+$("level").addEventListener("change", () => { if (mode === "target") newTarget(); if (mode === "read") newRead(); });
+
+// keyboard: 1-8 flip bulbs (left to right), space = next
+addEventListener("keydown", (e) => {
+  if (e.key >= "1" && e.key <= "8") flip(+e.key - 1);
+  if (e.key === "ArrowRight") $("btnNext").click();
+});
+
+render(); setMode("challenge"); requestAnimationFrame(sizeNibbles);
+</script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variable Vault</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one centred card stage on a kraft-paper ground; four vault locks across the top track progress.
+   Single committed look (kraft + ink), colours set explicitly so it reads the same on any host theme. */
+:root{
+  --kraft:#E6D5B8; --kraft-d:#D4BE98; --card:#FFFCF5; --ink:#1C2333; --muted:#5E5A50;
+  --tape:#F4C542; --stamp:#C2372C; --ok:#2C7A4B; --lock:#3C4A63;
+  --code-bg:#1C2333; --code-ink:#E4E9F2; --kw:#8DB8FF; --num:#F5B26B; --str:#A6DD8F; --cm:#7D8BA3; --fn:#E3C1FF;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--kraft);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;
+  background-image:radial-gradient(rgba(0,0,0,.035) 1px,transparent 1px);background-size:6px 6px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 28px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:800;font-size:1.35rem;letter-spacing:-.01em}
+.brand span{background:var(--tape);padding:0 6px;transform:rotate(-2deg);display:inline-block}
+.hud{display:flex;gap:8px;font-variant-numeric:tabular-nums}
+.pill{background:var(--card);border:2px solid var(--ink);border-radius:999px;padding:3px 12px;font-weight:700;font-size:.9rem}
+.locks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.lock{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:6px 8px;font-size:.78rem;display:flex;gap:8px;align-items:center;min-width:0}
+.lock .ic{width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--lock);color:#fff;font-weight:800;font-family:var(--display)}
+.lock .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.lock.on{box-shadow:0 0 0 3px var(--tape)}
+.lock.done .ic{background:var(--ok)}
+@media (max-width:520px){.lock .nm{display:none}.lock{justify-content:center}}
+
+.card{background:var(--card);border:2px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);padding:22px 22px 20px;position:relative}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,7vw,3.2rem);line-height:1;margin:6px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(1.3rem,4vw,1.7rem);margin:4px 0 12px;line-height:1.15;text-wrap:balance}
+p{margin:0 0 10px}
+.objectives{display:grid;gap:8px;margin:14px 0 18px;padding:0;list-style:none}
+.objectives li{display:flex;gap:10px;align-items:flex-start}
+.objectives b{flex:none;width:28px;height:28px;border-radius:50%;background:var(--lock);color:#fff;display:grid;place-items:center;font-family:var(--display)}
+label{font-weight:700;display:block;margin-bottom:6px}
+input[type=text]{font:inherit;width:100%;padding:12px 14px;border:2px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)}
+.err{color:var(--stamp);font-weight:700;min-height:1.4em;margin-top:6px}
+.btn{font:inherit;font-weight:800;font-family:var(--display);font-size:1.1rem;border:2px solid var(--ink);border-radius:12px;background:var(--tape);color:var(--ink);padding:12px 22px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.ghost{background:var(--card)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.qhead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}
+.timer{height:8px;background:var(--kraft-d);border-radius:4px;overflow:hidden;margin:6px 0 14px}
+.timer i{display:block;height:100%;background:var(--ink);width:100%}
+.timer.low i{background:var(--stamp)}
+pre.code{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:clamp(.82rem,2.4vw,.98rem);line-height:1.6;padding:14px 16px;border-radius:10px;overflow-x:auto;margin:0 0 14px}
+.kw{color:var(--kw)}.n{color:var(--num)}.s{color:var(--str)}.c{color:var(--cm);font-style:italic}.f{color:var(--fn)}
+.hl{background:rgba(244,197,66,.28);outline:1px solid var(--tape);border-radius:3px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{font:inherit;text-align:left;border:2px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);padding:12px 14px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;min-width:0}
+.opt .k{flex:none;width:24px;height:24px;border-radius:6px;background:var(--kraft);display:grid;place-items:center;font-weight:800;font-size:.8rem}
+.opt .t{min-width:0;overflow-wrap:anywhere}
+.opt code,.explain code,p code{font-family:var(--mono);font-size:.92em;background:rgba(28,35,51,.08);padding:1px 5px;border-radius:4px}
+.opt:hover:not(:disabled){background:#FFF6D8}
+.opt:disabled{cursor:default}
+.opt.right{background:#DFF1E5;border-color:var(--ok)}
+.opt.right .k{background:var(--ok);color:#fff}
+.opt.wrong{background:#F8DEDA;border-color:var(--stamp)}
+.opt.wrong .k{background:var(--stamp);color:#fff}
+.feedback{margin-top:14px;border-top:2px dashed var(--kraft-d);padding-top:12px}
+.verdict{font-family:var(--display);font-weight:800;font-size:1.25rem}
+.verdict.ok{color:var(--ok)}.verdict.no{color:var(--stamp)}
+.gain{font-weight:700;color:var(--muted);margin-left:8px;font-size:.95rem}
+
+/* sort round */
+.sortitem{display:flex;justify-content:center;margin:8px 0 16px}
+.chip{font-family:var(--mono);font-weight:600;font-size:clamp(1.6rem,6vw,2.4rem);background:#fff;border:2px solid var(--ink);border-radius:12px;padding:10px 26px;box-shadow:4px 4px 0 var(--ink);animation:drop .35s ease-out}
+@keyframes drop{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+.bins{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:560px){.bins{grid-template-columns:1fr 1fr}}
+.bin{font:inherit;font-weight:800;font-family:var(--display);border:2px solid var(--ink);border-radius:12px;padding:16px 8px 12px;background:var(--kraft);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bin small{font-family:var(--body);font-weight:400;font-size:.75rem;color:var(--muted)}
+.bin.right{background:#DFF1E5;border-color:var(--ok)}.bin.wrong{background:#F8DEDA;border-color:var(--stamp)}
+.sorted{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;min-height:30px}
+.sorted span{font-family:var(--mono);font-size:.8rem;border-radius:6px;padding:2px 8px;border:1.5px solid var(--ink)}
+.sorted .y{background:#DFF1E5}.sorted .x{background:#F8DEDA}
+
+/* level card */
+.levelno{font-family:var(--display);font-weight:800;font-size:4rem;line-height:1;color:var(--lock)}
+.stamp{position:absolute;right:18px;top:16px;border:3px solid var(--stamp);color:var(--stamp);font-family:var(--display);font-weight:800;padding:2px 10px;border-radius:6px;transform:rotate(8deg);font-size:.9rem;letter-spacing:.06em}
+
+/* results */
+.big{font-family:var(--display);font-weight:800;font-size:clamp(2.6rem,9vw,4rem);line-height:1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.stat{border:2px solid var(--ink);border-radius:10px;padding:8px 10px;background:#fff}
+.stat .v{font-family:var(--display);font-weight:800;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.stat .l{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.bars{display:grid;gap:10px;margin:10px 0 16px}
+.barrow{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:4px 12px;align-items:center}
+.barrow .lbl{font-weight:700;font-size:.92rem}
+.barrow .pc{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.track{grid-column:1/-1;height:12px;border-radius:6px;background:var(--kraft-d);overflow:hidden}
+.track i{display:block;height:100%;background:var(--ok)}
+.track i.mid{background:var(--tape)}.track i.low{background:var(--stamp)}
+.revise{background:#FFF3CC;border:2px solid var(--ink);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+details{border:2px solid var(--ink);border-radius:10px;background:#fff;margin-top:8px}
+summary{cursor:pointer;padding:10px 14px;font-weight:700}
+.rev{padding:0 14px 12px}
+.rev div{padding:8px 0;border-top:1px solid var(--kraft-d);font-size:.92rem}
+.rev .y::before{content:"✓ ";color:var(--ok);font-weight:800}
+.rev .x::before{content:"✗ ";color:var(--stamp);font-weight:800}
+.foot{font-size:.8rem;color:var(--muted);text-align:center}
+button:focus-visible,input:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Variable <span>Vault</span></div>
+    <div class="hud"><span class="pill" id="hScore">0 pts</span><span class="pill" id="hStreak">🔥 0</span></div>
+  </div>
+  <div class="locks" id="locks"></div>
+  <main class="card" id="stage" aria-live="polite"></main>
+  <div class="foot">B2.1.1 Variables and data types · IB1 Computer Science</div>
+</div>
+
+<script>
+// ---------- tiny Python highlighter ----------
+const KW=new Set(['def','return','if','elif','else','for','in','while','global','True','False','None','and','or','not','print','range','int','str','float','bool','input','len','type']);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function hl(src,mark){
+  return src.split('\n').map(line=>{
+    let out='',i=0;
+    while(i<line.length){
+      const ch=line[i];
+      if(ch==='#'){out+=`<span class="c">${esc(line.slice(i))}</span>`;break;}
+      if(ch==='"'||ch==="'"){let j=i+1;while(j<line.length&&line[j]!==ch)j++;out+=`<span class="s">${esc(line.slice(i,j+1))}</span>`;i=j+1;continue;}
+      if(/[0-9]/.test(ch)){let j=i;while(j<line.length&&/[0-9.]/.test(line[j]))j++;out+=`<span class="n">${line.slice(i,j)}</span>`;i=j;continue;}
+      if(/[A-Za-z_]/.test(ch)){let j=i;while(j<line.length&&/\w/.test(line[j]))j++;const w=line.slice(i,j);
+        const cls=KW.has(w)?(['print','range','int','str','float','bool','input','len','type'].includes(w)?'f':'kw'):'';
+        const t=cls?`<span class="${cls}">${w}</span>`:w;
+        out+=(mark&&w===mark)?`<span class="hl">${t}</span>`:t;i=j;continue;}
+      out+=esc(ch);i++;
+    }
+    return out||' ';
+  }).join('\n');
+}
+
+// ---------- content ----------
+const LEVELS=[
+ {name:'Scope Out',obj:'Global vs local variables',intro:'A <b>global</b> variable is created outside any function and can be read anywhere. A <b>local</b> variable is created inside a function and only exists while that function runs.'},
+ {name:'Trace It',obj:'Tracing programs with variables',intro:'Follow the code line by line. Keep track of what each variable holds <b>after</b> every line. Use paper if it helps!'},
+ {name:'Type Cast',obj:'Boolean, char, integer, string',intro:'Every value has a data type. First a quick sorting round, then some questions about choosing the right type.'},
+ {name:'Build It',obj:'Variables in Python programs',intro:'Time to write real Python. Pick the line that works, spot the bug, fill the gap.'}
+];
+const Q=[
+ // Level 1: scope
+ {lv:0,type:'mc',prompt:'Which variable is <b>local</b>?',code:'score = 10\n\ndef add_bonus():\n    bonus = 5\n    print(score + bonus)\n\nadd_bonus()',
+  opts:['<code>score</code>','<code>bonus</code>','<code>add_bonus</code>','Both <code>score</code> and <code>bonus</code>'],a:1,
+  why:'<code>bonus</code> is created <b>inside</b> the function, so it is local. <code>score</code> is created at the top level, outside any function, so it is global.'},
+ {lv:0,type:'mc',prompt:'What happens when this runs?',code:'def greet():\n    name = "Alex"\n\ngreet()\nprint(name)',
+  opts:['It prints <code>Alex</code>','It crashes with a <b>NameError</b>','It prints <code>None</code>','It prints <code>name</code>'],a:1,
+  why:'<code>name</code> is local to <code>greet()</code>. Once the function ends, it no longer exists, so the last line cannot find it.'},
+ {lv:0,type:'mc',prompt:'What does this program print?',code:'x = 5\n\ndef change():\n    x = 99\n\nchange()\nprint(x)',
+  opts:['<code>99</code>','<code>5</code>','<code>104</code>','Error'],a:1,
+  why:'<code>x = 99</code> inside the function creates a <b>new local</b> <code>x</code>. The global <code>x</code> is untouched, so 5 is printed.'},
+ {lv:0,type:'mc',prompt:'Which statement about global and local variables is <b>true</b>?',
+  opts:['Local variables can be used anywhere in the program','A global variable is declared outside any function and can be read throughout the program','Global variables can never change value','A variable inside a loop is always global'],a:1,
+  why:'Globals live at the top level of the program. Locals are limited to the function that created them, which helps avoid accidental changes and name clashes.'},
+ {lv:0,type:'mc',prompt:'What does the <code>global</code> keyword do here?',code:'count = 0\n\ndef increase():\n    global count\n    count = count + 1\n\nincrease()\nprint(count)',
+  opts:['Creates a new local variable called count','Lets the function change the global <code>count</code>, so it prints 1','Makes count a constant','Nothing: it prints 0'],a:1,
+  why:'Without <code>global</code>, assigning to <code>count</code> would make a new local variable. With it, the function updates the global one, so 1 is printed.'},
+ // Level 2: trace
+ {lv:1,type:'mc',prompt:'What is printed?',code:'a = 3\nb = a + 2\na = b * 2\nprint(a, b)',
+  opts:['<code>3 5</code>','<code>10 5</code>','<code>6 5</code>','<code>10 10</code>'],a:1,
+  why:'a = 3, then b = 3 + 2 = 5, then a = 5 × 2 = 10. b stays 5.'},
+ {lv:1,type:'mc',prompt:'What is printed?',code:'x = 7\ny = x\nx = x + 1\nprint(y)',
+  opts:['<code>8</code>','<code>7</code>','<code>x</code>','Error'],a:1,
+  why:'<code>y = x</code> copies the value 7 into y at that moment. Changing x afterwards does not change y.'},
+ {lv:1,type:'mc',prompt:'What is the final value of <code>count</code>?',code:'count = 10\ncount = count - 3\ncount = count * 2',
+  opts:['<code>14</code>','<code>17</code>','<code>4</code>','<code>20</code>'],a:0,
+  why:'10 − 3 = 7, then 7 × 2 = 14. Each line uses the value from the line before.'},
+ {lv:1,type:'mc',prompt:'What is printed?',code:'total = 0\nfor i in range(1, 4):\n    total = total + i\nprint(total)',
+  opts:['<code>10</code>','<code>3</code>','<code>6</code>','<code>4</code>'],a:2,
+  why:'range(1, 4) gives 1, 2, 3 (it stops before 4). total goes 0 → 1 → 3 → 6.'},
+ {lv:1,type:'mc',prompt:'A student tries to swap two variables. What is printed?',code:'a = 1\nb = 2\na = b\nb = a\nprint(a, b)',
+  opts:['<code>2 1</code>','<code>1 2</code>','<code>2 2</code>','<code>1 1</code>'],a:2,
+  why:'After <code>a = b</code>, a is 2 and the original 1 is lost. Then <code>b = a</code> sets b to 2 too. A real swap needs a temporary variable: <code>temp = a</code>.'},
+ // Level 3: types
+ {lv:2,type:'sort',prompt:'Sort each value into its data type!',
+  bins:[['Boolean','True / False'],['char','one character'],['integer','whole number'],['string','text']],
+  items:[['True',0],["'Q'",1],['42',2],['"Oxford"',3],['False',0],['-7',2],["'7'",1],['"42"',3]],
+  why:'Watch the quotes! <code>\'7\'</code> is a single character, not a number, and <code>"42"</code> is a string. In Python a char is just a string of length 1.'},
+ {lv:2,type:'mc',prompt:'Which data type best stores whether a student has paid for a school trip?',
+  opts:['integer','string','Boolean','char'],a:2,
+  why:'There are only two possible answers, paid or not paid, so a Boolean (True / False) fits exactly.'},
+ {lv:2,type:'mc',prompt:'What does Python print?',code:"print(type('A'))",
+  opts:["<code>&lt;class 'char'&gt;</code>","<code>&lt;class 'str'&gt;</code>","<code>&lt;class 'int'&gt;</code>",'Error'],a:1,
+  why:'Python has no separate char type. A single character is stored as a string of length 1. Other languages, such as Java, do have a char type.'},
+ {lv:2,type:'mc',prompt:'Why should a phone number like <code>07700 900123</code> be stored as a <b>string</b>?',
+  opts:['Strings use less memory than integers','An integer would drop the leading 0, and we never do arithmetic on phone numbers','Integers cannot be printed','Python does not allow numbers that big'],a:1,
+  why:'As an integer, 07700900123 loses its leading zero, and phone numbers can contain + or spaces. You never add or multiply them, so a string is right.'},
+ // Level 4: implement
+ {lv:3,type:'mc',prompt:'Which line stores the user\'s age so you can do arithmetic with it?',
+  opts:['<code>age = input("Age? ")</code>','<code>age = int(input("Age? "))</code>','<code>int age = input("Age? ")</code>','<code>age = input(int("Age? "))</code>'],a:1,
+  why:'<code>input()</code> always returns a string. Wrapping it in <code>int()</code> converts it to an integer. Python never puts the type before the name.'},
+ {lv:3,type:'mc',prompt:'This line crashes. Which fix works?',code:'age = 16\nprint("You are " + age + " years old")',
+  opts:['<code>print("You are " + int(age) + " years old")</code>','<code>print("You are " + str(age) + " years old")</code>','<code>print("You are " + "age" + " years old")</code>','<code>print(You are + age + years old)</code>'],a:1,
+  why:'You cannot join a string and an integer with +. <code>str(age)</code> turns 16 into "16" so it can be concatenated. Putting age in quotes would print the word "age".'},
+ {lv:3,type:'mc',prompt:'Which line creates a <b>Boolean</b> variable?',
+  opts:['<code>is_member = "True"</code>','<code>is_member = True</code>','<code>is_member = true</code>','<code>is_member = 1.0</code>'],a:1,
+  why:'Python Booleans are <code>True</code> and <code>False</code>, with a capital letter and no quotes. With quotes it is a string; lower-case <code>true</code> is a NameError.'},
+ {lv:3,type:'mc',prompt:'Fill the gap so <code>initial</code> holds the <b>first</b> character of the name.',code:'name = "Nikki"\ninitial = name[ ? ]\nprint(initial)',
+  opts:['<code>1</code>','<code>0</code>','<code>-1</code>','<code>first</code>'],a:1,
+  why:'Indexing starts at 0, so <code>name[0]</code> is "N". <code>name[1]</code> would be "i" and <code>name[-1]</code> is the last character.'},
+ {lv:3,type:'mc',prompt:'Which is the best variable name for the number of students in a class?',
+  opts:['<code>x</code>','<code>2students</code>','<code>num_students</code>','<code>number of students</code>'],a:2,
+  why:'<code>num_students</code> is meaningful and follows snake_case. <code>2students</code> starts with a digit and the last option has spaces, so both are illegal. <code>x</code> tells you nothing.'}
+];
+
+// ---------- state ----------
+const TIME_MC=30, TIME_SORT=45;
+let st,timer=null,left=0;
+const $=id=>document.getElementById(id), stage=$('stage');
+function reset(name){st={name,qi:0,score:0,streak:0,best:0,log:[],lvRight:[0,0,0,0],lvTotal:[0,0,0,0],shownLevel:-1};}
+function hud(){ $('hScore').textContent=(st?st.score:0)+' pts'; $('hStreak').textContent='🔥 '+(st?st.streak:0); }
+function locks(cur){
+  $('locks').innerHTML=LEVELS.map((L,i)=>`<div class="lock ${cur===i?'on':''} ${cur>i||cur===4?'done':''}"><span class="ic">${cur>i||cur===4?'✓':i+1}</span><span class="nm">${L.name}</span></div>`).join('');
+}
+function stopTimer(){ if(timer){clearInterval(timer);timer=null;} }
+function startTimer(total,onEnd){
+  stopTimer(); left=total; const bar=stage.querySelector('.timer'), i=bar.querySelector('i'), lbl=stage.querySelector('#tl');
+  const t0=performance.now();
+  timer=setInterval(()=>{ left=total-(performance.now()-t0)/1000; if(left<0)left=0;
+    i.style.width=(left/total*100)+'%'; bar.classList.toggle('low',left<8); if(lbl)lbl.textContent=Math.ceil(left)+'s';
+    if(left<=0){stopTimer();onEnd();} },100);
+}
+
+// ---------- screens ----------
+function home(){
+  stopTimer(); st=null; hud(); locks(-1);
+  stage.innerHTML=`<div class="eyebrow">B2.1.1 recap game</div>
+  <h1>Crack the Variable Vault</h1>
+  <p>Four locks stand between you and the vault. Each one tests a learning objective. Answer fast for bonus points, and keep a streak going for extra.</p>
+  <ul class="objectives">${LEVELS.map((L,i)=>`<li><b>${i+1}</b><span><strong>${L.name}:</strong> ${L.obj}</span></li>`).join('')}</ul>
+  <form id="f"><label for="nm">Your name</label><input type="text" id="nm" maxlength="24" autocomplete="off" placeholder="e.g. Alex">
+  <div class="err" id="err"></div><button class="btn" type="submit">Start the heist →</button></form>`;
+  $('f').addEventListener('submit',e=>{e.preventDefault();const n=$('nm').value.trim();
+    if(!n){$('err').textContent='Type your name first so your teacher knows whose score it is.';$('nm').focus();return;}
+    reset(n);hud();next();});
+}
+function next(){
+  if(st.qi>=Q.length)return results();
+  const q=Q[st.qi];
+  if(q.lv!==st.shownLevel){st.shownLevel=q.lv;return levelCard(q.lv);}
+  q.type==='sort'?sortQ(q):mcQ(q);
+}
+function levelCard(lv){
+  stopTimer(); locks(lv); const L=LEVELS[lv];
+  stage.innerHTML=`<span class="stamp">LOCK ${lv+1}/4</span><div class="levelno">${lv+1}</div><h2>${L.name}</h2>
+  <div class="eyebrow" style="margin-bottom:8px">${L.obj}</div><p>${L.intro}</p><div class="row" style="margin-top:14px"><button class="btn" id="go">Let's go →</button></div>`;
+  $('go').onclick=()=>next(); $('go').focus();
+}
+function qnum(){ return `Question ${st.qi+1} of ${Q.length}`; }
+function mcQ(q){
+  locks(q.lv);
+  q._perm=[0,1,2,3].sort(()=>Math.random()-.5); q._a=q._perm.indexOf(q.a);
+  stage.innerHTML=`<div class="qhead"><span class="eyebrow">${LEVELS[q.lv].name} · ${qnum()}</span><span class="pill" id="tl">${TIME_MC}s</span></div>
+  <div class="timer"><i></i></div><h2>${q.prompt}</h2>${q.code?`<pre class="code">${hl(q.code)}</pre>`:''}
+  <div class="opts">${q._perm.map((o,i)=>`<button class="opt" data-i="${i}"><span class="k">${i+1}</span><span class="t">${q.opts[o]}</span></button>`).join('')}</div><div id="fb"></div>`;
+  stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answerMC(q,+b.dataset.i));
+  startTimer(TIME_MC,()=>answerMC(q,-1));
+}
+function answerMC(q,pick){
+  if(stage.dataset.locked==='1')return; stage.dataset.locked='1'; stopTimer();
+  const ok=pick===q._a, btns=stage.querySelectorAll('.opt');
+  btns.forEach(b=>b.disabled=true); btns[q._a].classList.add('right'); if(pick>=0&&!ok)btns[pick].classList.add('wrong');
+  let gain=0;
+  if(ok){st.streak++;st.best=Math.max(st.best,st.streak);gain=100+Math.round(left*2)+(st.streak>=3?25:0);st.score+=gain;st.lvRight[q.lv]++;} else st.streak=0;
+  st.lvTotal[q.lv]++; st.log.push({lv:q.lv,ok,text:q.prompt.replace(/<[^>]+>/g,''),ans:q.opts[q.a].replace(/<[^>]+>/g,'')}); hud();
+  feedback(ok,pick<0?"Time's up!":ok?pickWin():'Not quite.',gain,q.why);
+}
+function sortQ(q){
+  locks(q.lv); let k=0,right=0; const results=[];
+  const items=[...q.items].sort(()=>Math.random()-.5);
+  stage.innerHTML=`<div class="qhead"><span class="eyebrow">${LEVELS[q.lv].name} · Sorting round</span><span class="pill" id="tl">${TIME_SORT}s</span></div>
+  <div class="timer"><i></i></div><h2>${q.prompt}</h2><div class="sortitem" id="si"></div>
+  <div class="bins">${q.bins.map((b,i)=>`<button class="bin" data-i="${i}">${b[0]}<small>${b[1]}</small></button>`).join('')}</div>
+  <div class="sorted" id="so"></div><div id="fb"></div>`;
+  const show=()=>{ $('si').innerHTML=`<span class="chip">${esc(items[k][0])}</span>`; };
+  const end=()=>{ if(stage.dataset.locked==='1')return; stage.dataset.locked='1'; stopTimer();
+    stage.querySelectorAll('.bin').forEach(b=>b.disabled=true);
+    for(let j=k;j<items.length;j++)results.push({v:items[j][0],ok:false,c:items[j][1]});
+    $('si').innerHTML='';
+    $('so').innerHTML=results.map(r=>`<span class="${r.ok?'y':'x'}">${esc(r.v)} → ${q.bins[r.c][0]}</span>`).join('');
+    const gain=right*25+(right===items.length?50:0), ok=right>=6;
+    if(ok){st.streak++;st.best=Math.max(st.best,st.streak);}else st.streak=0;
+    st.score+=gain; st.lvRight[q.lv]+=right/items.length; st.lvTotal[q.lv]++;
+    st.log.push({lv:q.lv,ok,text:`Sorting round: ${right}/${items.length} correct`,ans:'see the sorted chips'}); hud();
+    feedback(ok,right===items.length?'Perfect sort!':`${right} of ${items.length} sorted correctly`,gain,q.why);
+  };
+  stage.querySelectorAll('.bin').forEach(b=>b.onclick=()=>{
+    if(k>=items.length)return; const pick=+b.dataset.i, it=items[k], good=pick===it[1];
+    if(good)right++; results.push({v:it[0],ok:good,c:it[1]});
+    b.classList.add(good?'right':'wrong'); setTimeout(()=>b.classList.remove('right','wrong'),300);
+    $('so').innerHTML=results.map(r=>`<span class="${r.ok?'y':'x'}">${esc(r.v)}</span>`).join('');
+    k++; if(k>=items.length)end(); else show();
+  });
+  show(); startTimer(TIME_SORT,end);
+}
+const WINS=['Nailed it!','Correct!','Vault-worthy!','Spot on!','Yes!'];
+function pickWin(){return WINS[Math.floor(Math.random()*WINS.length)];}
+function feedback(ok,verdict,gain,why){
+  const last=st.qi===Q.length-1, nextLv=!last&&Q[st.qi+1].lv!==Q[st.qi].lv;
+  $('fb').innerHTML=`<div class="feedback"><div><span class="verdict ${ok?'ok':'no'}">${verdict}</span><span class="gain">+${gain} pts${ok&&st.streak>=3?' (streak bonus!)':''}</span></div>
+  <p class="explain" style="margin-top:6px">${why}</p><div class="row"><button class="btn" id="nx">${last?'Open the vault →':nextLv?'Unlock next level →':'Next →'}</button></div></div>`;
+  $('nx').onclick=()=>{stage.dataset.locked='0';st.qi++;next();}; $('nx').focus();
+}
+function results(){
+  stopTimer(); locks(4);
+  const correct=st.log.filter(l=>l.ok).length, pcs=st.lvRight.map((r,i)=>st.lvTotal[i]?Math.round(r/st.lvTotal[i]*100):0);
+  const rank=correct>=17?'Vault Master':correct>=14?'Safe Cracker':correct>=10?'Code Breaker':correct>=6?'Apprentice':'Lock Picker in Training';
+  const weak=pcs.map((p,i)=>[p,i]).filter(x=>x[0]<70).sort((a,b)=>a[0]-b[0]);
+  stage.innerHTML=`<span class="stamp">${correct>=14?'OPENED':'CRACKED'}</span><div class="eyebrow">${esc(st.name)} · results</div>
+  <div class="big">${st.score} pts</div><h2 style="margin-top:6px">${rank}</h2>
+  <div class="stats"><div class="stat"><div class="v">${correct}/${Q.length}</div><div class="l">correct</div></div>
+  <div class="stat"><div class="v">${st.best}</div><div class="l">best streak</div></div><div class="stat"><div class="v">${Math.round(correct/Q.length*100)}%</div><div class="l">accuracy</div></div></div>
+  <div class="eyebrow">By learning objective</div>
+  <div class="bars">${LEVELS.map((L,i)=>`<div class="barrow"><span class="lbl">${i+1}. ${L.obj}</span><span class="pc">${pcs[i]}%</span><div class="track"><i class="${pcs[i]<50?'low':pcs[i]<70?'mid':''}" style="width:${pcs[i]}%"></i></div></div>`).join('')}</div>
+  ${weak.length?`<div class="revise"><b>Revise next:</b> ${weak.map(w=>LEVELS[w[1]].obj).join(', ')}.</div>`:`<div class="revise"><b>All four objectives at 70% or above.</b> Great work!</div>`}
+  <div class="row"><button class="btn" id="again">Play again</button><button class="btn ghost" id="home">New player</button></div>
+  <details><summary>Review every question</summary><div class="rev">${st.log.map(l=>`<div class="${l.ok?'y':'x'}">${esc(l.text)}<br><small>Answer: ${esc(l.ans)}</small></div>`).join('')}</div></details>
+  <p class="foot" style="margin-top:12px">Show this screen to your teacher, or take a screenshot.</p>`;
+  $('again').onclick=()=>{const n=st.name;reset(n);hud();next();}; $('home').onclick=home;
+}
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  const n=parseInt(e.key,10); if(n>=1&&n<=4){const b=stage.querySelector(`.opt[data-i="${n-1}"]:not(:disabled), .bin[data-i="${n-1}"]:not(:disabled)`); if(b){e.preventDefault();b.click();}}
+});
+home();
+</script>
+
+</body>
+</html>

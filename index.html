@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computer Science Classroom Games</title>
+<meta name="description" content="Free interactive starters, recap games, exit tickets and code walkthroughs for IB and secondary Computer Science. They run in any browser, on a SMART Board or on student laptops.">
+<style>
+  :root{
+    --bg:#f4f6fa; --panel:#ffffff; --ink:#18223a; --muted:#5a6680; --line:#d8deea;
+    --accent:#2f4fd8; --accent-soft:#e6ebfd;
+    --starter:#c46a00; --starter-soft:#fff1dc;
+    --recap:#1f8a5b; --recap-soft:#dcf3e8;
+    --exit:#b23a6a; --exit-soft:#fbe3ee;
+    --walk:#2f4fd8; --walk-soft:#e6ebfd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:17px;line-height:1.5}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 20px 56px}
+  header{margin-bottom:28px}
+  .eyebrow{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+  h1{font-size:clamp(2rem,5vw,3rem);line-height:1.08;margin:6px 0 12px}
+  .lede{color:var(--muted);max-width:68ch;margin:0 0 16px}
+  .how{display:flex;flex-wrap:wrap;gap:10px}
+  .how span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+  h2{font-size:1.25rem;margin:34px 0 12px;display:flex;align-items:baseline;gap:10px}
+  h2 small{font-size:.85rem;font-weight:400;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:.78rem;font-weight:700;border-radius:6px;padding:2px 8px;background:#eef1f6;color:var(--muted)}
+  .tag.code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--ink);color:#fff}
+  .tag.starter{background:var(--starter-soft);color:var(--starter)}
+  .tag.recap{background:var(--recap-soft);color:var(--recap)}
+  .tag.exit{background:var(--exit-soft);color:var(--exit)}
+  .tag.walk{background:var(--walk-soft);color:var(--walk)}
+  .card h3{margin:0;font-size:1.25rem;line-height:1.2}
+  .card p{margin:0;color:var(--muted)}
+  .best{font-size:.88rem;color:var(--ink)}
+  .best b{font-weight:700}
+  .play{margin-top:auto;align-self:flex-start;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;border-radius:10px;padding:10px 18px}
+  .play:hover{filter:brightness(1.1)}
+  .play:focus-visible{outline:3px solid var(--starter);outline-offset:2px}
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+  footer p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Free for teachers</div>
+    <h1>Computer Science Classroom Games</h1>
+    <p class="lede">Interactive starters, recap games, exit tickets and code walkthroughs for IB Diploma and secondary Computer Science. Every activity runs in a web browser, with nothing to install and no logins.</p>
+    <div class="how"><span>🖥️ SMART Board or projector</span><span>💻 Student laptops</span><span>🐍 Python</span><span>📘 IB DP CS (first assessment 2027)</span></div>
+  </header>
+
+  <h2>A1 Computer fundamentals</h2>
+  <div class="grid">
+    <article class="card">
+      <div class="tags"><span class="tag code">A1.2</span><span class="tag starter">Starter</span></div>
+      <h3>Flip the Bits</h3>
+      <p>Turn light bulbs on and off to make binary numbers. Guided challenges build up place value, MSB and LSB, the biggest 8-bit number, and hex.</p>
+      <div class="best"><b>Best on:</b> SMART Board, whole class</div>
+      <a class="play" href="A1.2-binary-numbers-starter-flip-the-bits.html">Play ▶</a>
+    </article>
+  </div>
+
+  <h2>B2 Programming</h2>
+  <div class="grid">
+    <article class="card">
+      <div class="tags"><span class="tag code">B2.1</span><span class="tag recap">Recap game</span></div>
+      <h3>Variable Vault</h3>
+      <p>Crack four locks: global and local variables, tracing code, choosing data types, and writing Python. Results show which objective to revise.</p>
+      <div class="best"><b>Best on:</b> student laptops, individually</div>
+      <a class="play" href="B2.1-variables-and-data-types-recap-game-variable-vault.html">Play ▶</a>
+    </article>
+    <article class="card">
+      <div class="tags"><span class="tag code">B2.3</span><span class="tag starter">Starter</span></div>
+      <h3>Bug Splat</h3>
+      <p>Two teams race to splat the bug carrying what a Python snippet prints. Every wrong answer is a common misconception about sequence and selection.</p>
+      <div class="best"><b>Best on:</b> SMART Board, two teams</div>
+      <a class="play" href="B2.3-python-sequence-and-selection-starter-bug-splat.html">Play ▶</a>
+    </article>
+    <article class="card">
+      <div class="tags"><span class="tag code">B2.4</span><span class="tag starter">Starter</span></div>
+      <h3>Locker Search</h3>
+      <p>Open lockers one at a time to find a name. Students discover linear search, best and worst cases, and why "not found" means checking everything.</p>
+      <div class="best"><b>Best on:</b> SMART Board, whole class</div>
+      <a class="play" href="B2.4-linear-search-starter-locker-search.html">Play ▶</a>
+    </article>
+    <article class="card">
+      <div class="tags"><span class="tag code">B2.4</span><span class="tag exit">Exit ticket</span></div>
+      <h3>Locker Run</h3>
+      <p>Eleven quick challenges on linear search: trace it, read the code, count comparisons and compare it with binary search.</p>
+      <div class="best"><b>Best on:</b> student laptops, individually</div>
+      <a class="play" href="B2.4-linear-search-exit-ticket-locker-run.html">Play ▶</a>
+    </article>
+    <article class="card">
+      <div class="tags"><span class="tag code">B2.4</span><span class="tag walk">Code walkthrough</span></div>
+      <h3>Binary search, step by step</h3>
+      <p>Builds the Python function line by line, then traces a search with low, mid and high moving across the list. Includes questions to ask the class.</p>
+      <div class="best"><b>Best on:</b> projector, teacher-led</div>
+      <a class="play" href="B2.4-binary-search-step-by-step-walkthrough.html">Play ▶</a>
+    </article>
+    <article class="card">
+      <div class="tags"><span class="tag code">B2.4</span><span class="tag walk">Code walkthrough</span></div>
+      <h3>Bubble sort, line by line</h3>
+      <p>Step through Python's bubble sort and watch the list change. Shows variables, comparisons and swaps, with check-your-understanding questions.</p>
+      <div class="best"><b>Best on:</b> projector or student laptops</div>
+      <a class="play" href="B2.4-bubble-sort-line-by-line-walkthrough.html">Play ▶</a>
+    </article>
+  </div>
+
+  <h2>B4 Abstract data types <small>HL only</small></h2>
+  <div class="grid">
+    <article class="card">
+      <div class="tags"><span class="tag code">B4.1</span><span class="tag recap">Recap starter</span></div>
+      <h3>Linked lists: welcome back</h3>
+      <p>Nine questions on singly linked lists with animated diagrams: nodes, traversal, inserting at the head and tail, and circular lists.</p>
+      <div class="best"><b>Best on:</b> projector or student laptops</div>
+      <a class="play" href="B4.1-linked-lists-recap-starter.html">Play ▶</a>
+    </article>
+  </div>
+
+  <footer>
+    <p>Created by Nikki Cossey, Head of Computer Science, with the help of Claude (AI).</p>
+    <p>Free to use in your classroom. Please share the link rather than re-hosting the files.</p>
+  </footer>
+</div>
+</body>
+</html>

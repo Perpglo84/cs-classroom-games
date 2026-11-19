@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locker Search</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a school corridor. Target + counter band on top, a row of 8 numbered lockers, then round log and discussion side by side. */
+:root{
+  --bg:#eef1f8; --panel:#ffffff; --ink:#141a3a; --muted:#59607e; --line:#cfd5e6;
+  --navy:#2e3191; --sky:#469ddd; --locker:#5a8fd0; --locker-dark:#3f6fae; --vent:rgba(10,20,60,.28);
+  --inside:#fdf8ec; --hit:#1f8a4c; --hit-bg:#e2f4e8; --miss:#b4442c; --miss-bg:#f8e4de;
+  --display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1330; --panel:#181d45; --ink:#eef1ff; --muted:#a6acd0; --line:#2c3366;
+  --navy:#8b8ff0; --sky:#6fb6ec; --locker:#3a5f9c; --locker-dark:#2a4a7e; --vent:rgba(0,0,0,.35);
+  --inside:#26294f; --hit:#5fd18f; --hit-bg:#173a2a; --miss:#f08a6e; --miss-bg:#3d2020; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1330; --panel:#181d45; --ink:#eef1ff; --muted:#a6acd0; --line:#2c3366;
+  --navy:#8b8ff0; --sky:#6fb6ec; --locker:#3a5f9c; --locker-dark:#2a4a7e; --vent:rgba(0,0,0,.35);
+  --inside:#26294f; --hit:#5fd18f; --hit-bg:#173a2a; --miss:#f08a6e; --miss-bg:#3d2020; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1,h2{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0;line-height:1;text-wrap:balance}
+h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;color:var(--navy)}
+h2{font-size:1.6rem;font-weight:800}
+.eyebrow{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.top{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between}
+.brief{color:var(--muted);max-width:52ch;margin:.4rem 0 0}
+.status{display:flex;gap:14px;flex-wrap:wrap}
+.chip{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:10px 18px;min-width:150px}
+.chip .v{font-family:var(--display);font-weight:800;font-size:2.6rem;line-height:1;color:var(--ink)}
+.chip.target{border-color:var(--sky)}
+.chip.target .v{color:var(--navy)}
+.count .v{font-variant-numeric:tabular-nums}
+.controls{display:flex;flex-wrap:wrap;gap:10px}
+button{font:inherit;font-weight:700;cursor:pointer;border-radius:10px;padding:10px 16px;border:2px solid var(--navy);background:var(--panel);color:var(--navy)}
+button.primary{background:var(--navy);color:var(--panel)}
+button:focus-visible,.locker:focus-visible,summary:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.message{min-height:2.2em;font-size:1.25rem;font-weight:700;margin:0}
+.message.hit{color:var(--hit)} .message.miss{color:var(--miss)}
+/* lockers */
+.corridor{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:12px;perspective:1200px}
+@media (max-width:760px){.corridor{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.locker{position:relative;aspect-ratio:1/2.1;max-width:100%;border:0;padding:0;background:transparent;cursor:pointer;color:inherit}
+.locker .inside{position:absolute;inset:0;border-radius:8px;background:var(--inside);border:2px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px}
+.locker .name{font-family:var(--display);font-weight:800;font-size:clamp(1rem,2.2vw,1.7rem);text-transform:uppercase;letter-spacing:.02em;overflow-wrap:anywhere;text-align:center}
+.locker .mark{font-size:1.4rem;font-weight:700}
+.locker.hit .inside{background:var(--hit-bg);border-color:var(--hit)} .locker.hit .mark{color:var(--hit)}
+.locker.miss .inside{background:var(--miss-bg);border-color:var(--miss)} .locker.miss .mark{color:var(--miss)}
+.door{position:absolute;inset:0;border-radius:8px;background:var(--locker);transform-origin:left center;transition:transform .55s ease;
+  border:2px solid var(--locker-dark);display:flex;flex-direction:column;align-items:center;padding:14px 8px;gap:10px;
+  box-shadow:inset -6px 0 0 var(--locker-dark)}
+.vents{width:70%;height:18%;background:repeating-linear-gradient(to bottom,var(--vent) 0 4px,transparent 4px 9px);border-radius:3px}
+.plate{background:var(--inside);color:var(--ink);font-family:var(--mono);font-size:clamp(.8rem,1.6vw,1.05rem);padding:3px 8px;border-radius:4px;border:1px solid var(--locker-dark)}
+.handle{width:10px;height:18%;background:var(--locker-dark);border-radius:5px;margin-top:auto;margin-bottom:28%;align-self:flex-end;margin-right:6%}
+.locker.open .door{transform:rotateY(-105deg)}
+.locker:disabled{cursor:default}
+@media (prefers-reduced-motion:reduce){.door{transition:none}}
+/* lower section */
+.lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:22px}
+@media (max-width:860px){.lower{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+th{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono)}
+.empty{color:var(--muted);font-style:italic}
+.tag{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.85rem;font-weight:700}
+.tag.hit{background:var(--hit-bg);color:var(--hit)} .tag.miss{background:var(--miss-bg);color:var(--miss)}
+details{border-top:1px solid var(--line);padding:10px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;font-weight:700;font-size:1.08rem}
+details p{margin:.5rem 0 0;color:var(--muted)}
+pre{font-family:var(--mono);font-size:.95rem;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;margin:0}
+.kw{color:var(--navy);font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Starter · Linear search</div>
+      <h1>Who's behind the locker?</h1>
+      <p class="brief">Eight lockers, eight names, in random order. Open one locker at a time. Can you find the target, and how many checks will it take?</p>
+    </div>
+    <div class="status">
+      <div class="chip target"><div class="eyebrow">Find</div><div class="v" id="target">–</div></div>
+      <div class="chip count"><div class="eyebrow">Checks</div><div class="v" id="count">0</div></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="primary" id="newRound" type="button">New round</button>
+    <button id="absentRound" type="button">Find Zara</button>
+    <button id="autoRun" type="button">Run linear search</button>
+    <button id="revealAll" type="button">Open all lockers</button>
+  </div>
+
+  <p class="message" id="message" aria-live="polite">Click a locker to check it.</p>
+
+  <section class="corridor" id="corridor" aria-label="Lockers"></section>
+
+  <div class="lower">
+    <section class="panel">
+      <h2>Round log</h2>
+      <table>
+        <thead><tr><th>Round</th><th>Target</th><th>Checks</th><th>Result</th></tr></thead>
+        <tbody id="log"><tr><td colspan="4" class="empty">Finished rounds appear here.</td></tr></tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Discuss</h2>
+      <details><summary>What was your strategy for choosing lockers?</summary>
+        <p>With no order to the names, any locker is as good as any other. The only reliable strategy is to check every locker once, without repeats. Going left to right is the simplest way to guarantee that: this is linear search.</p></details>
+      <details><summary>When could you stop?</summary>
+        <p>As soon as you find the target. If the target isn't there, you can only stop after checking every locker.</p></details>
+      <details><summary>What is the best case? The worst case?</summary>
+        <p>Best case: 1 check (the first locker). Worst case: all 8 checks (the last locker, or not there at all). With n items the worst case is n comparisons, which is O(n).</p></details>
+      <details><summary>Zara isn't in the class list. When do you know?</summary>
+        <p>Only after opening every locker. You can never declare "not found" early in an unsorted list.</p></details>
+      <details><summary>Would sorting the names help?</summary>
+        <p>Linear search works on unsorted data, which is its big advantage. If the list were sorted alphabetically, you could use a faster method (binary search). That's coming next.</p></details>
+      <details><summary>Show the algorithm in Python</summary>
+        <pre><span class="kw">def</span> linear_search(names, target):
+    <span class="kw">for</span> i <span class="kw">in</span> range(len(names)):
+        <span class="kw">if</span> names[i] == target:
+            <span class="kw">return</span> i      <span style="color:var(--muted)"># found: stop early</span>
+    <span class="kw">return</span> -1         <span style="color:var(--muted)"># checked everything: not found</span></pre></details>
+    </section>
+  </div>
+</div>
+
+<script>
+const NAMES = ["Amara","Ben","Chloe","Dev","Elif","Finn","Grace","Hugo"];
+const ABSENT = "Zara";
+const corridor = document.getElementById("corridor");
+const targetEl = document.getElementById("target");
+const countEl = document.getElementById("count");
+const msg = document.getElementById("message");
+const logEl = document.getElementById("log");
+let order = [], target = "", checks = 0, done = false, round = 0, timer = null, opened = new Set();
+const rounds = [];
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function build(){
+  corridor.innerHTML = "";
+  order.forEach((name,i)=>{
+    const b = document.createElement("button");
+    b.className = "locker"; b.type = "button"; b.id = "locker-"+i;
+    b.setAttribute("aria-label","Locker "+i);
+    b.innerHTML = `<div class="inside"><span class="name">${name}</span><span class="mark"></span></div>
+      <div class="door"><div class="vents"></div><div class="plate">[${i}]</div><div class="handle"></div></div>`;
+    b.addEventListener("click",()=>check(i));
+    corridor.appendChild(b);
+  });
+}
+
+function start(t){
+  clearInterval(timer); timer = null;
+  order = shuffle(NAMES); target = t; checks = 0; done = false; opened = new Set(); round++;
+  targetEl.textContent = target; countEl.textContent = "0";
+  msg.className = "message"; msg.textContent = "Click a locker to check it.";
+  build(); setButtons();
+}
+
+function check(i){
+  if (done || opened.has(i)) return;
+  opened.add(i); checks++; countEl.textContent = checks;
+  const el = document.getElementById("locker-"+i);
+  const hit = order[i] === target;
+  el.classList.add("open", hit ? "hit" : "miss");
+  el.querySelector(".mark").textContent = hit ? "✓ found" : "✗";
+  el.setAttribute("aria-label","Locker "+i+": "+order[i]);
+  if (hit){ finish(true, `Found ${target} at index ${i} after ${checks} check${checks>1?"s":""}.`); }
+  else if (opened.size === order.length){ finish(false, `Not found. You had to check all ${checks} lockers to be sure.`); }
+  else { msg.className = "message"; msg.textContent = `Locker [${i}] holds ${order[i]}. Keep going.`; }
+}
+
+function finish(found, text){
+  done = true; clearInterval(timer); timer = null;
+  msg.className = "message " + (found ? "hit" : "miss"); msg.textContent = text;
+  rounds.push({round, target, checks, found});
+  logEl.innerHTML = rounds.map(r=>`<tr><td class="n">${r.round}</td><td>${r.target}</td><td class="n">${r.checks}</td><td><span class="tag ${r.found?"hit":"miss"}">${r.found?"Found":"Not found"}</span></td></tr>`).join("");
+  corridor.querySelectorAll(".locker").forEach(l=>l.disabled = true);
+  setButtons();
+}
+
+function setButtons(){
+  document.getElementById("autoRun").disabled = done || opened.size > 0 || !!timer;
+  document.getElementById("revealAll").disabled = !done;
+}
+
+function autoRun(){
+  if (done || opened.size) return;
+  let i = 0; setButtons();
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  timer = setInterval(()=>{ if (done || i >= order.length){clearInterval(timer);timer=null;setButtons();return;} check(i++); }, reduce ? 250 : 750);
+  setButtons();
+}
+
+function revealAll(){
+  order.forEach((n,i)=>{ const el=document.getElementById("locker-"+i); if(!el.classList.contains("open")){ el.classList.add("open"); el.querySelector(".mark").textContent=""; }});
+}
+
+document.getElementById("newRound").addEventListener("click",()=>start(NAMES[Math.floor(Math.random()*NAMES.length)]));
+document.getElementById("absentRound").addEventListener("click",()=>start(ABSENT));
+document.getElementById("autoRun").addEventListener("click",autoRun);
+document.getElementById("revealAll").addEventListener("click",revealAll);
+start(NAMES[Math.floor(Math.random()*NAMES.length)]);
+</script>
+
+</body>
+</html>
